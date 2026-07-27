@@ -57,12 +57,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void initAnalytics();
-    const unsub = onAuthStateChanged(auth, (next) => {
-      setUser(next);
+    let unsub = () => {};
+    try {
+      void initAnalytics();
+      unsub = onAuthStateChanged(
+        auth,
+        (next) => {
+          setUser(next);
+          setLoading(false);
+        },
+        (err) => {
+          console.error('Auth state error', err);
+          setError('Could not connect to Firebase Auth.');
+          setLoading(false);
+        },
+      );
+    } catch (err) {
+      console.error('Auth init failed', err);
+      setError('Firebase failed to start. Check project configuration.');
       setLoading(false);
-    });
-    return unsub;
+    }
+    return () => unsub();
   }, []);
 
   const value = useMemo<AuthContextValue>(

@@ -11,6 +11,16 @@ A Notion-style personal workspace for day-to-day tasks, learning, office work, c
 - **Custom colors** — theme presets + primary/accent pickers
 - **Cloud + local cache** — Firestore is source of truth when signed in; `localStorage` caches offline
 
+## Deploy (Vercel)
+
+1. Push to GitHub and import the repo in Vercel
+2. Framework preset: **Vite** (build `npm run build`, output `dist`)
+3. Optional: add `VITE_FIREBASE_*` env vars (defaults are already in code)
+4. In Firebase Console → **Authentication** → **Settings** → **Authorized domains**, add:
+   - `localhost`
+   - your Vercel domain, e.g. `your-app.vercel.app`
+5. Publish Firestore rules from `firestore.rules`
+
 ## Firebase setup (required once)
 
 1. Open [Firebase Console](https://console.firebase.google.com/) → project `personal-workspace-f1a98`

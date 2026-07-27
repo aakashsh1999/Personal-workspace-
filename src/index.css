@@ -488,13 +488,15 @@ textarea:focus-visible {
   letter-spacing: -0.04em;
 }
 
-.auth-loading-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  text-align: center;
-  color: var(--ink-soft);
+.crash-detail {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .auth-modal {
