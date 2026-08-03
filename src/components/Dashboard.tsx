@@ -14,6 +14,7 @@ import {
 import { useMemo, type CSSProperties } from 'react';
 import { useStore } from '../store';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../types';
+import { Heading, Text } from './catalyst';
 import {
   Badge,
   Button,
@@ -92,31 +93,32 @@ export function Dashboard() {
       : '₹0';
 
   return (
-    <div className="dashboard mx-auto max-w-6xl">
-      <header className="dash-hero mb-7">
-        <p className="dash-kicker m-0 text-sm font-semibold tracking-wide text-[var(--muted)]">
+    <div className="dashboard mx-auto max-w-5xl">
+      <header className="dash-hero mb-4">
+        <Text className="!text-xs !font-semibold tracking-wide text-zinc-500">
           {today}
-        </p>
-        <h1 className="dash-title mt-2">Orbit</h1>
-        <p className="dash-lead mt-3 max-w-xl text-[1.05rem] text-[var(--ink-soft)]">
-          Your personal ops console — tasks, learning, career, projects, money,
-          and goals in one calm workspace.
-        </p>
+        </Text>
+        <Heading className="mt-1 !text-[clamp(1.8rem,4vw,2.4rem)] font-[family-name:var(--font-display)]">
+          Orbit
+        </Heading>
+        <Text className="mt-1.5 max-w-lg">
+          Tasks, learning, career, projects, money, and goals — one workspace.
+        </Text>
       </header>
 
       <section
-        className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4"
+        className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
         aria-label="Overview"
       >
         <StatCard
           label="Open items"
           value={stats.open}
-          icon={<ListTodo size={18} aria-hidden />}
+          icon={<ListTodo size={16} aria-hidden />}
         />
         <StatCard
           label="Due today"
           value={stats.dueToday.length}
-          icon={<CheckCircle2 size={18} aria-hidden />}
+          icon={<CheckCircle2 size={16} aria-hidden />}
         />
         <StatCard
           label="Payments pending"
@@ -126,17 +128,17 @@ export function Dashboard() {
               ? `${stats.overduePay} overdue`
               : 'Advances & dues'
           }
-          icon={<Wallet size={18} aria-hidden />}
+          icon={<Wallet size={16} aria-hidden />}
         />
         <StatCard
           label="Habits today"
           value={`${stats.habitDone}/${stats.habitTotal}`}
-          icon={<Flame size={18} aria-hidden />}
+          icon={<Flame size={16} aria-hidden />}
         />
       </section>
 
       <section
-        className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+        className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4"
         aria-label="Spaces"
       >
         {shortcuts.map((s) => (
@@ -144,19 +146,21 @@ export function Dashboard() {
             key={s.id}
             type="button"
             onClick={() => setActivePageId(s.id)}
-            className="group flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-3.5 text-left shadow-[var(--shadow-sm)] transition hover:border-[#cbd5e1] hover:shadow-[var(--shadow)]"
+            className="group flex items-center gap-2.5 rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-left shadow-[var(--shadow-sm)] transition hover:border-[#cbd5e1] hover:shadow-[var(--shadow)]"
           >
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--teal-soft)] text-[var(--teal-deep)]">
-              <s.icon size={18} aria-hidden />
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--teal-soft)] text-[var(--teal-deep)]">
+              <s.icon size={15} aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-semibold text-[var(--ink)]">
+              <span className="block text-sm font-semibold text-[var(--ink)]">
                 {s.label}
               </span>
-              <span className="block text-sm text-[var(--muted)]">{s.hint}</span>
+              <span className="block truncate text-xs text-[var(--muted)]">
+                {s.hint}
+              </span>
             </span>
             <ArrowRight
-              size={16}
+              size={14}
               className="text-[var(--muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--teal)]"
               aria-hidden
             />
@@ -164,7 +168,7 @@ export function Dashboard() {
         ))}
       </section>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">

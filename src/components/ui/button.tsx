@@ -1,50 +1,46 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-import type { ButtonHTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import clsx from 'clsx'
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { Button as CatalystButton } from '../catalyst/button'
 
-const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--teal)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer border',
-  {
-    variants: {
-      variant: {
-        primary:
-          'border-transparent bg-[var(--teal)] text-white shadow-sm hover:bg-[var(--teal-deep)]',
-        secondary:
-          'border-[var(--line)] bg-white text-[var(--ink)] shadow-sm hover:bg-[var(--surface-solid)]',
-        ghost:
-          'border-transparent bg-transparent text-[var(--ink-soft)] hover:bg-black/[0.04] hover:text-[var(--ink)]',
-        danger:
-          'border-transparent bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]',
-      },
-      size: {
-        sm: 'h-9 px-3 text-[0.82rem]',
-        md: 'h-10 px-4',
-        lg: 'h-11 px-5',
-        icon: 'h-9 w-9 p-0',
-      },
-    },
-    defaultVariants: {
-      variant: 'primary',
-      size: 'md',
-    },
-  },
-);
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type Size = 'sm' | 'md' | 'lg' | 'icon'
 
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
-  VariantProps<typeof buttonVariants>;
+const sizeClass: Record<Size, string> = {
+  sm: 'sm:!px-2.5 sm:!py-1 !text-xs',
+  md: '',
+  lg: 'sm:!px-4 sm:!py-2.5',
+  icon: '!size-8 !p-0 sm:!size-8',
+}
+
+export type ButtonProps = {
+  variant?: Variant
+  size?: Size
+  className?: string
+  children: ReactNode
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children' | 'color'>
 
 export function Button({
+  variant = 'primary',
+  size = 'md',
   className,
-  variant,
-  size,
+  children,
   type = 'button',
   ...props
 }: ButtonProps) {
-  return (
-    <button
-      type={type}
-      className={cn(buttonVariants({ variant, size }), className)}
-      {...props}
-    />
-  );
+  const classes = clsx(sizeClass[size], 'cursor-pointer', className)
+  const shared = { className: classes, type, children, ...props }
+
+  if (variant === 'secondary') {
+    return <CatalystButton outline {...shared} />
+  }
+
+  if (variant === 'ghost') {
+    return <CatalystButton plain {...shared} />
+  }
+
+  if (variant === 'danger') {
+    return <CatalystButton color="red" {...shared} />
+  }
+
+  return <CatalystButton color="teal" {...shared} />
 }

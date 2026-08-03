@@ -1,30 +1,33 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-import type { HTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import type { ComponentPropsWithoutRef } from 'react'
+import { Badge as CatalystBadge } from '../catalyst/badge'
 
-const badgeVariants = cva(
-  'inline-flex items-center rounded-lg px-2 py-0.5 text-[0.72rem] font-bold tracking-wide',
-  {
-    variants: {
-      variant: {
-        default: 'bg-[var(--surface-solid)] text-[var(--ink-soft)]',
-        success: 'bg-emerald-50 text-emerald-700',
-        warning: 'bg-amber-50 text-amber-800',
-        danger: 'bg-rose-50 text-rose-700',
-        info: 'bg-sky-50 text-sky-800',
-        brand: 'bg-[var(--teal-soft)] text-[var(--teal-deep)]',
-      },
-    },
-    defaultVariants: { variant: 'default' },
-  },
-);
+type Variant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'brand'
+
+function colorFor(
+  variant: Variant,
+): 'zinc' | 'green' | 'amber' | 'red' | 'sky' | 'teal' {
+  switch (variant) {
+    case 'success':
+      return 'green'
+    case 'warning':
+      return 'amber'
+    case 'danger':
+      return 'red'
+    case 'info':
+      return 'sky'
+    case 'brand':
+      return 'teal'
+    default:
+      return 'zinc'
+  }
+}
 
 export function Badge({
   className,
-  variant,
+  variant = 'default',
   ...props
-}: HTMLAttributes<HTMLSpanElement> & VariantProps<typeof badgeVariants>) {
+}: Omit<ComponentPropsWithoutRef<'span'>, 'color'> & { variant?: Variant }) {
   return (
-    <span className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+    <CatalystBadge className={className} {...props} color={colorFor(variant)} />
+  )
 }

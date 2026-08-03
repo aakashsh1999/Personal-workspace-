@@ -8,7 +8,7 @@ export function Card({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-[var(--shadow-sm)]',
+        'rounded-xl border border-zinc-950/10 bg-white shadow-sm',
         className,
       )}
       {...props}
@@ -22,7 +22,7 @@ export function CardHeader({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('flex items-start justify-between gap-3 px-5 pt-5', className)}
+      className={cn('flex items-start justify-between gap-2 px-3.5 pt-3', className)}
       {...props}
     />
   );
@@ -35,7 +35,7 @@ export function CardTitle({
   return (
     <h3
       className={cn(
-        'm-0 font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-[var(--ink)]',
+        'm-0 font-[family-name:var(--font-display)] text-sm font-semibold tracking-tight text-[var(--ink)]',
         className,
       )}
       {...props}
@@ -49,7 +49,7 @@ export function CardDescription({
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn('m-0 mt-1 text-sm text-[var(--muted)]', className)}
+      className={cn('m-0 mt-0.5 text-xs text-[var(--muted)]', className)}
       {...props}
     />
   );
@@ -59,5 +59,5 @@ export function CardContent({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('px-5 py-4', className)} {...props} />;
+  return <div className={cn('px-3.5 py-3', className)} {...props} />;
 }

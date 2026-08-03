@@ -2,27 +2,27 @@
 @import 'tailwindcss';
 
 :root {
-  /* shadcn/Tremor-inspired admin tokens — teal brand kept */
-  --ink: #0f172a;
-  --ink-soft: #334155;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --surface: rgba(255, 255, 255, 0.86);
-  --surface-solid: #f8fafc;
+  /* Catalyst zinc surfaces + Orbit teal accent */
+  --ink: #09090b;
+  --ink-soft: #3f3f46;
+  --muted: #71717a;
+  --line: rgb(9 9 11 / 0.1);
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-solid: #fafafa;
   --panel: #ffffff;
-  --teal: #0f766e;
-  --teal-deep: #115e59;
+  --teal: #0d9488;
+  --teal-deep: #0f766e;
   --teal-soft: #ccfbf1;
   --teal-mid: #5eead4;
-  --sky: #0369a1;
-  --amber: #c2410c;
+  --sky: #0284c7;
+  --amber: #d97706;
   --gold: #b45309;
-  --green: #15803d;
-  --danger: #b91c1c;
+  --green: #16a34a;
+  --danger: #dc2626;
   --radius: 16px;
   --radius-sm: 12px;
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 1px 2px rgb(9 9 11 / 0.05);
+  --shadow: 0 8px 24px rgb(9 9 11 / 0.06);
   --font-display: 'Outfit', system-ui, sans-serif;
   --font-body: 'Source Sans 3', system-ui, sans-serif;
   --sidebar-w: 272px;
@@ -52,13 +52,12 @@ body,
 body {
   min-height: 100vh;
   background:
-    radial-gradient(900px 480px at 0% -5%, rgba(15, 118, 110, 0.1), transparent 55%),
-    radial-gradient(700px 420px at 100% 0%, rgba(3, 105, 161, 0.08), transparent 50%),
-    linear-gradient(180deg, #f1f5f9 0%, #f8fafc 40%, #eef2f6 100%);
+    radial-gradient(900px 480px at 0% -5%, rgb(13 148 136 / 0.1), transparent 55%),
+    radial-gradient(700px 420px at 100% 0%, rgb(9 9 11 / 0.04), transparent 50%),
+    linear-gradient(180deg, #fafafa 0%, #f4f4f5 45%, #fafafa 100%);
   color: var(--ink);
 }
 
-button,
 input,
 select,
 textarea {
@@ -67,6 +66,7 @@ textarea {
 }
 
 button {
+  font: inherit;
   cursor: pointer;
 }
 
@@ -97,7 +97,7 @@ textarea:focus-visible {
   flex-direction: column;
   gap: 12px;
   padding: 16px 12px;
-  border-right: 1px solid var(--line);
+  border-right: 1px solid rgb(9 9 11 / 0.05);
   background: #ffffff;
   z-index: 20;
   box-shadow: inset -1px 0 0 transparent;
@@ -245,12 +245,18 @@ textarea:focus-visible {
 
 .btn-primary {
   background: var(--teal);
-  color: white;
+  color: #fff !important;
   box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
   background: var(--teal-deep);
+  color: #fff !important;
+}
+
+.btn-primary svg {
+  color: #fff !important;
+  stroke: currentColor;
 }
 
 .btn-secondary {
@@ -528,17 +534,17 @@ textarea:focus-visible {
   place-items: center;
   padding: 24px 16px;
   background:
-    radial-gradient(900px 500px at 10% -10%, color-mix(in srgb, var(--teal) 22%, transparent), transparent 55%),
-    radial-gradient(800px 420px at 90% 0%, color-mix(in srgb, var(--sky) 16%, transparent), transparent 50%),
-    linear-gradient(165deg, #e7eef4 0%, #f4f7fa 45%, #eef5f3 100%);
+    radial-gradient(900px 500px at 10% -10%, color-mix(in srgb, var(--teal) 18%, transparent), transparent 55%),
+    radial-gradient(800px 420px at 90% 0%, rgb(9 9 11 / 0.04), transparent 50%),
+    linear-gradient(165deg, #fafafa 0%, #f4f4f5 45%, #fafafa 100%);
 }
 
 .auth-screen-card {
   width: min(440px, 100%);
   background: white;
-  border-radius: 20px;
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
+  border-radius: 16px;
+  border: 1px solid rgb(9 9 11 / 0.1);
+  box-shadow: 0 1px 2px rgb(9 9 11 / 0.05);
   padding: 32px 28px;
   animation: rise 180ms ease;
 }
@@ -2227,12 +2233,31 @@ textarea:focus-visible {
 .item-edit-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
 }
 
 .item-card.is-editing {
   border-color: color-mix(in srgb, var(--teal) 35%, var(--line));
+  padding: 12px 14px;
+}
+
+.item-fields--compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.item-card.is-editing .item-notes,
+.item-card.is-editing .item-tags {
+  margin-top: 8px;
+}
+
+.item-card.is-editing .item-notes textarea {
+  min-height: 56px;
 }
 
 .item-card {

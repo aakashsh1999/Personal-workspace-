@@ -164,25 +164,15 @@ function ItemRow({
 
   return (
     <article className="item-card is-editing">
-      <div className="item-card-top">
-        <input
-          className="item-title"
-          value={draft.title}
-          placeholder="What needs to get done?"
-          autoFocus
-          aria-label="Item title"
-          onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-        />
-        <div className="item-edit-actions">
-          <Button variant="secondary" size="sm" onClick={cancel}>
-            <X size={14} aria-hidden /> Cancel
-          </Button>
-          <Button variant="primary" size="sm" onClick={save}>
-            <Check size={14} aria-hidden /> Save
-          </Button>
-        </div>
-      </div>
-      <div className="item-fields">
+      <input
+        className="item-title"
+        value={draft.title}
+        placeholder="What needs to get done?"
+        autoFocus
+        aria-label="Item title"
+        onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+      />
+      <div className="item-fields item-fields--compact">
         <label>
           Status
           <select
@@ -227,7 +217,7 @@ function ItemRow({
           />
         </label>
         <label>
-          Progress
+          Progress ({draft.progress}%)
           <input
             type="range"
             min={0}
@@ -240,7 +230,6 @@ function ItemRow({
               }))
             }
           />
-          <span className="progress-val">{draft.progress}%</span>
         </label>
       </div>
       <label className="item-notes">
@@ -253,12 +242,21 @@ function ItemRow({
         />
       </label>
       <label className="item-tags">
-        Tags (comma separated)
+        Tags
         <input
           value={draft.tags}
+          placeholder="work, urgent…"
           onChange={(e) => setDraft((d) => ({ ...d, tags: e.target.value }))}
         />
       </label>
+      <div className="item-edit-actions">
+        <Button variant="secondary" size="sm" onClick={cancel}>
+          <X size={14} aria-hidden /> Cancel
+        </Button>
+        <Button variant="primary" size="sm" onClick={save}>
+          <Check size={14} aria-hidden /> Save
+        </Button>
+      </div>
     </article>
   );
 }

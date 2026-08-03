@@ -1,29 +1,38 @@
-import { useState, type FormEvent } from 'react';
-import { useAuth } from '../lib/auth';
-import { Button } from './ui';
+import { useState, type FormEvent } from 'react'
+import { useAuth } from '../lib/auth'
+import {
+  ErrorMessage,
+  Field,
+  FieldGroup,
+  Heading,
+  Input,
+  Label,
+  Text,
+} from './catalyst'
+import { Button } from './ui'
 
 export function AuthScreen() {
-  const { signIn, signUp, error, clearError } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
+  const { signIn, signUp, error, clearError } = useAuth()
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
 
   async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    clearError();
+    e.preventDefault()
+    setBusy(true)
+    clearError()
     try {
       if (mode === 'signup') {
-        await signUp(email.trim(), password, name);
+        await signUp(email.trim(), password, name)
       } else {
-        await signIn(email.trim(), password);
+        await signIn(email.trim(), password)
       }
     } catch {
       // error shown via context
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
@@ -40,59 +49,61 @@ export function AuthScreen() {
           </div>
         </div>
 
-        <h1 id="auth-title" className="auth-heading">
+        <Heading id="auth-title" className="!text-[1.65rem]">
           {mode === 'signin' ? 'Welcome back' : 'Create your account'}
-        </h1>
-        <p className="auth-lead">
+        </Heading>
+        <Text className="mt-2">
           Your workspace syncs to the cloud. Sign in to open tasks, side
           projects, clients, and payments.
-        </p>
+        </Text>
 
-        <form className="auth-form" onSubmit={onSubmit}>
-          {mode === 'signup' && (
-            <label>
-              Name
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-                placeholder="Your name"
+        <form className="mt-8" onSubmit={onSubmit}>
+          <FieldGroup>
+            {mode === 'signup' && (
+              <Field>
+                <Label>Name</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  placeholder="Your name"
+                />
+              </Field>
+            )}
+            <Field>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="you@example.com"
               />
-            </label>
-          )}
-          <label>
-            Email
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              placeholder="you@example.com"
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={
-                mode === 'signup' ? 'new-password' : 'current-password'
-              }
-              placeholder="At least 6 characters"
-            />
-          </label>
+            </Field>
+            <Field>
+              <Label>Password</Label>
+              <Input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={
+                  mode === 'signup' ? 'new-password' : 'current-password'
+                }
+                placeholder="At least 6 characters"
+              />
+            </Field>
+          </FieldGroup>
 
           {error && (
-            <p className="auth-error" role="alert">
+            <ErrorMessage className="mt-4" role="alert">
               {error}
-            </p>
+            </ErrorMessage>
           )}
 
-          <Button type="submit" className="w-full" disabled={busy}>
+          <Button type="submit" className="mt-8 w-full" disabled={busy}>
             {busy
               ? 'Please wait…'
               : mode === 'signin'
@@ -101,7 +112,7 @@ export function AuthScreen() {
           </Button>
         </form>
 
-        <p className="auth-switch">
+        <Text className="mt-6">
           {mode === 'signin' ? (
             <>
               New here?{' '}
@@ -109,8 +120,8 @@ export function AuthScreen() {
                 type="button"
                 className="link-btn"
                 onClick={() => {
-                  clearError();
-                  setMode('signup');
+                  clearError()
+                  setMode('signup')
                 }}
               >
                 Create an account
@@ -123,18 +134,18 @@ export function AuthScreen() {
                 type="button"
                 className="link-btn"
                 onClick={() => {
-                  clearError();
-                  setMode('signin');
+                  clearError()
+                  setMode('signin')
                 }}
               >
                 Sign in
               </button>
             </>
           )}
-        </p>
+        </Text>
       </div>
     </div>
-  );
+  )
 }
 
 export function AuthLoading() {
@@ -147,5 +158,5 @@ export function AuthLoading() {
         <p>Checking your account…</p>
       </div>
     </div>
-  );
+  )
 }
