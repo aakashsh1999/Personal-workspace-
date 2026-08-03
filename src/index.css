@@ -412,35 +412,52 @@ textarea:focus-visible {
   font-weight: 600;
 }
 
+.topbar-save--icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
 .topbar-save--local {
-  background: #e2e8f0;
-  color: #334155;
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #e2e8f0;
 }
 
 .topbar-save--syncing {
-  background: #e0f2fe;
-  color: #075985;
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
 .topbar-save--synced {
-  background: var(--teal-soft);
-  color: var(--teal-deep);
+  background: #ecfdf5;
+  color: #16a34a;
+  border-color: #bbf7d0;
 }
 
 .topbar-save--error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
-.sync-error-hint {
-  max-width: 220px;
-  font-size: 0.75rem;
-  color: #991b1b;
-  line-height: 1.3;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.sync-loader {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: sync-spin 0.7s linear infinite;
+}
+
+@keyframes sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .auth-overlay {

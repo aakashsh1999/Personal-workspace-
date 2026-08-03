@@ -335,43 +335,19 @@ export function FreelancePanel({ pageId }: { pageId: string }) {
             <div className="payment-actions">
               <button
                 type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() =>
-                  addPayment({ type: 'advance', title: 'Advance payment' })
-                }
-                disabled={state.clients.length === 0}
-              >
-                <Plus size={16} aria-hidden /> Advance
-              </button>
-              <button
-                type="button"
                 className="btn btn-primary btn-sm"
-                onClick={() =>
-                  addPayment({ type: 'due', title: 'Due payment' })
-                }
+                onClick={() => {
+                  setPayFilter('all');
+                  addPayment({
+                    type: 'advance',
+                    title: 'New payment',
+                    amount: 0,
+                    status: 'draft',
+                  });
+                }}
                 disabled={state.clients.length === 0}
               >
-                <Plus size={16} aria-hidden /> Due
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() =>
-                  addPayment({ type: 'refund', title: 'Refund payment' })
-                }
-                disabled={state.clients.length === 0}
-              >
-                <Plus size={16} aria-hidden /> Refund
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() =>
-                  addPayment({ type: 'return', title: 'Return payment' })
-                }
-                disabled={state.clients.length === 0}
-              >
-                <Plus size={16} aria-hidden /> Return
+                <Plus size={16} aria-hidden /> Add payment
               </button>
             </div>
           </div>
@@ -456,11 +432,35 @@ export function FreelancePanel({ pageId }: { pageId: string }) {
                       <select
                         value={pay.type ?? 'due'}
                         aria-label="Payment type"
-                        onChange={(e) =>
-                          updatePayment(pay.id, {
-                            type: e.target.value as PaymentType,
-                          })
-                        }
+                        onChange={(e) => {
+                          const type = e.target.value as PaymentType;
+                          const defaultTitles = [
+                            'New payment',
+                            'Advance payment',
+                            'Due payment',
+                            'Refund payment',
+                            'Return payment',
+                          ];
+                          const patch: {
+                            type: PaymentType;
+                            title?: string;
+                          } = { type };
+                          if (
+                            defaultTitles.includes(pay.title) ||
+                            / — (advance|due \/ balance|due|refund|return)$/i.test(
+                              pay.title,
+                            )
+                          ) {
+                            const project = projects.find(
+                              (p) => p.id === pay.projectId,
+                            );
+                            const label = PAYMENT_TYPE_LABELS[type];
+                            patch.title = project
+                              ? `${project.title} — ${label.toLowerCase()}`
+                              : `${label} payment`;
+                          }
+                          updatePayment(pay.id, patch);
+                        }}
                       >
                         {PAY_TYPES.map((t) => (
                           <option key={t} value={t}>
@@ -494,10 +494,28 @@ export function FreelancePanel({ pageId }: { pageId: string }) {
                         onChange={(e) => {
                           const projectId = e.target.value || undefined;
                           const project = projects.find((p) => p.id === projectId);
+                          const type = pay.type ?? 'due';
+                          const label = PAYMENT_TYPE_LABELS[type];
+                          const isDefault =
+                            [
+                              'New payment',
+                              'Advance payment',
+                              'Due payment',
+                              'Refund payment',
+                              'Return payment',
+                            ].includes(pay.title) ||
+                            / — (advance|due \/ balance|due|refund|return)$/i.test(
+                              pay.title,
+                            );
                           updatePayment(pay.id, {
                             projectId,
                             ...(project?.clientId
                               ? { clientId: project.clientId }
+                              : {}),
+                            ...(project && isDefault
+                              ? {
+                                  title: `${project.title} — ${label.toLowerCase()}`,
+                                }
                               : {}),
                           });
                         }}
