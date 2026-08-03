@@ -9,6 +9,7 @@ import { FinanceEmbed } from './FinanceEmbed';
 import { FreelancePanel } from './FreelancePanel';
 import { GoalsPanel } from './GoalsPanel';
 import { HabitsPanel } from './HabitsPanel';
+import { NotePad } from './NotePad';
 import { PageIcon } from './icons';
 import { TrackerView } from './TrackerView';
 
@@ -249,11 +250,11 @@ export function PageWorkspace() {
             <div className="tracker-head">
               <h2>Notes</h2>
               <p>
-                Optional notepad for this page — titles, lists, and images. Not
-                your task list.
+                Rich notepad — size, color, style, lists, and images. Not your
+                task list.
               </p>
             </div>
-            <BlockEditor pageId={activePage.id} blocks={activePage.blocks} />
+            <NotePad page={activePage} />
           </section>
         )}
       </div>
@@ -281,16 +282,20 @@ export function PageWorkspace() {
         </div>
       </header>
 
-      {activePage.space === 'notes' && (
-        <p className="page-lead">
-          Simple notepad — titles, lists, and images. Paste or drop pictures
-          anywhere.
-        </p>
+      {activePage.space === 'notes' ? (
+        <>
+          <p className="page-lead">
+            Rich notepad — change text size, color, and style. Paste or drop
+            images anywhere.
+          </p>
+          <NotePad page={activePage} />
+        </>
+      ) : (
+        <>
+          <BlockEditor pageId={activePage.id} blocks={activePage.blocks} />
+          {activePage.space === 'habits' && <HabitsPanel />}
+        </>
       )}
-
-      <BlockEditor pageId={activePage.id} blocks={activePage.blocks} />
-
-      {activePage.space === 'habits' && <HabitsPanel />}
     </div>
   );
 }

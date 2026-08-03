@@ -128,6 +128,8 @@ export interface Page {
   space: SpaceKind;
   parentId?: string;
   blocks: Block[];
+  /** TipTap HTML for the rich notepad (preferred over blocks for notes). */
+  richContent?: string;
   items: TrackerItem[];
   viewMode: ViewMode;
   isTracker: boolean;
