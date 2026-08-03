@@ -9,6 +9,7 @@ import {
   NotebookPen,
   Rocket,
   StickyNote,
+  Target,
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
@@ -20,6 +21,7 @@ const MAP: Record<string, LucideIcon> = {
   rocket: Rocket,
   briefcase: Briefcase,
   freelance: Wallet,
+  target: Target,
   flame: Flame,
   note: StickyNote,
   grid: Grid3X3,

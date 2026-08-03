@@ -17,6 +17,7 @@ export type SpaceKind =
   | 'career'
   | 'office'
   | 'freelance'
+  | 'goals'
   | 'habits'
   | 'notes'
   | 'custom';
@@ -26,7 +27,26 @@ export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 export type ViewMode = 'list' | 'board' | 'table';
 export type PaymentStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 export type PaymentMethod = 'upi' | 'bank' | 'paypal' | 'card' | 'cash' | 'other';
-export type PaymentType = 'advance' | 'due';
+export type PaymentType = 'advance' | 'due' | 'refund' | 'return';
+export type GoalCategory =
+  | 'vehicle'
+  | 'home'
+  | 'family'
+  | 'financial'
+  | 'career'
+  | 'education'
+  | 'travel'
+  | 'health'
+  | 'personal'
+  | 'other';
+export type GoalStatus =
+  | 'planning'
+  | 'in_progress'
+  | 'on_track'
+  | 'at_risk'
+  | 'paused'
+  | 'achieved'
+  | 'cancelled';
 
 export interface Block {
   id: string;
@@ -78,6 +98,25 @@ export interface Payment {
   updatedAt: string;
 }
 
+export interface Goal {
+  id: string;
+  title: string;
+  category: GoalCategory;
+  status: GoalStatus;
+  priority: Priority;
+  targetAmount: number;
+  savedAmount: number;
+  currency: string;
+  targetDate?: string;
+  startDate?: string;
+  achievedDate?: string;
+  progress: number;
+  why: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Page {
   id: string;
   title: string;
@@ -109,6 +148,7 @@ export interface AppState {
   habits: Habit[];
   clients: Client[];
   payments: Payment[];
+  goals: Goal[];
   theme: ThemeSettings;
   activePageId: string;
   sidebarCollapsed: boolean;
@@ -167,6 +207,8 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
   advance: 'Advance',
   due: 'Due',
+  refund: 'Refund',
+  return: 'Return',
 };
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -176,6 +218,29 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   card: 'Card',
   cash: 'Cash',
   other: 'Other',
+};
+
+export const GOAL_CATEGORY_LABELS: Record<GoalCategory, string> = {
+  vehicle: 'Vehicle',
+  home: 'Home / property',
+  family: 'Family / marriage',
+  financial: 'Financial',
+  career: 'Career',
+  education: 'Education',
+  travel: 'Travel',
+  health: 'Health',
+  personal: 'Personal',
+  other: 'Other',
+};
+
+export const GOAL_STATUS_LABELS: Record<GoalStatus, string> = {
+  planning: 'Planning',
+  in_progress: 'In progress',
+  on_track: 'On track',
+  at_risk: 'At risk',
+  paused: 'Paused',
+  achieved: 'Achieved',
+  cancelled: 'Cancelled',
 };
 
 export const SPACE_META: Record<
@@ -188,6 +253,7 @@ export const SPACE_META: Record<
   career: { label: 'Career', description: 'Growth & milestones' },
   office: { label: 'Office', description: 'Work projects & meetings' },
   freelance: { label: 'Side Project', description: 'Clients, projects & payments' },
+  goals: { label: 'Goals', description: 'Life goals & milestones' },
   habits: { label: 'Habits', description: 'Streaks & routines' },
   notes: { label: 'Notes', description: 'Freeform pages' },
   custom: { label: 'Trackers', description: 'Any custom board' },

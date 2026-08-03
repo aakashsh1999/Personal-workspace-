@@ -21,6 +21,7 @@ import type {
   Block,
   BlockType,
   Client,
+  Goal,
   Habit,
   Page,
   Payment,
@@ -63,6 +64,9 @@ type Store = {
   addPayment: (partial?: Partial<Payment>) => void;
   updatePayment: (id: string, patch: Partial<Payment>) => void;
   deletePayment: (id: string) => void;
+  addGoal: (partial?: Partial<Goal>) => void;
+  updateGoal: (id: string, patch: Partial<Goal>) => void;
+  deleteGoal: (id: string) => void;
   setTheme: (theme: Partial<ThemeSettings>) => void;
   resetData: () => void;
   allItems: TrackerItem[];
@@ -83,6 +87,14 @@ function ensureCorePages(pages: Page[]): Page[] {
         ? { ...p, title: 'Side Project' }
         : p,
     );
+  }
+  if (!next.some((p) => p.id === 'page-goals')) {
+    const goalsPage = seed.pages.find((p) => p.id === 'page-goals');
+    if (goalsPage) {
+      const habitsIdx = next.findIndex((p) => p.id === 'page-habits');
+      if (habitsIdx >= 0) next.splice(habitsIdx, 0, goalsPage);
+      else next.push(goalsPage);
+    }
   }
   return next;
 }
@@ -107,6 +119,7 @@ function loadState(): AppState {
         ...p,
         type: p.type ?? ('due' as const),
       })),
+      goals: parsed.goals ?? [],
       theme: {
         ...DEFAULT_THEME,
         ...(parsed.theme ?? {}),
@@ -133,6 +146,7 @@ function fromCloud(cloud: CloudWorkspace, fallback: AppState): AppState {
       ...p,
       type: p.type ?? ('due' as const),
     })),
+    goals: cloud.goals ?? fallback.goals ?? [],
     theme: { ...DEFAULT_THEME, ...(cloud.theme ?? {}) },
     activePageId: cloud.activePageId ?? fallback.activePageId,
     sidebarCollapsed: cloud.sidebarCollapsed ?? fallback.sidebarCollapsed,
@@ -539,6 +553,46 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const addGoal = useCallback((partial: Partial<Goal> = {}) => {
+    const t = new Date().toISOString();
+    const goal: Goal = {
+      id: createId(),
+      title: partial.title ?? 'New goal',
+      category: partial.category ?? 'personal',
+      status: partial.status ?? 'planning',
+      priority: partial.priority ?? 'medium',
+      targetAmount: partial.targetAmount ?? 0,
+      savedAmount: partial.savedAmount ?? 0,
+      currency: partial.currency ?? 'INR',
+      targetDate: partial.targetDate,
+      startDate: partial.startDate ?? t.slice(0, 10),
+      achievedDate: partial.achievedDate,
+      progress: partial.progress ?? 0,
+      why: partial.why ?? '',
+      notes: partial.notes ?? '',
+      createdAt: t,
+      updatedAt: t,
+    };
+    setState((s) => ({ ...s, goals: [goal, ...(s.goals ?? [])] }));
+  }, []);
+
+  const updateGoal = useCallback((id: string, patch: Partial<Goal>) => {
+    const t = new Date().toISOString();
+    setState((s) => ({
+      ...s,
+      goals: (s.goals ?? []).map((g) =>
+        g.id === id ? { ...g, ...patch, updatedAt: t } : g,
+      ),
+    }));
+  }, []);
+
+  const deleteGoal = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      goals: (s.goals ?? []).filter((g) => g.id !== id),
+    }));
+  }, []);
+
   const setTheme = useCallback((theme: Partial<ThemeSettings>) => {
     setState((s) => ({
       ...s,
@@ -591,6 +645,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addPayment,
       updatePayment,
       deletePayment,
+      addGoal,
+      updateGoal,
+      deleteGoal,
       setTheme,
       resetData,
       allItems,
@@ -623,6 +680,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addPayment,
       updatePayment,
       deletePayment,
+      addGoal,
+      updateGoal,
+      deleteGoal,
       setTheme,
       resetData,
       allItems,

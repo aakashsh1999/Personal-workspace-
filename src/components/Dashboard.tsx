@@ -9,6 +9,7 @@ import {
   Target,
   Wallet,
 } from 'lucide-react';
+
 import { useMemo, type CSSProperties } from 'react';
 import { useStore } from '../store';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../types';
@@ -61,6 +62,7 @@ export function Dashboard() {
     { id: 'page-career', label: 'Career', icon: Rocket, hint: 'Growth path' },
     { id: 'page-office', label: 'Office', icon: Briefcase, hint: 'Work projects' },
     { id: 'page-freelance', label: 'Side Project', icon: Wallet, hint: 'Clients & payments' },
+    { id: 'page-goals', label: 'Goals', icon: Target, hint: 'Life milestones' },
   ];
 
   return (
@@ -69,7 +71,7 @@ export function Dashboard() {
         <p className="dash-kicker">{today}</p>
         <h1 className="dash-title">Orbit</h1>
         <p className="dash-lead">
-          Tasks, learning, career, office, and side projects with clients & payments.
+          Tasks, learning, career, office, side projects, and life goals — all in one place.
         </p>
       </header>
 

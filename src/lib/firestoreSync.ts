@@ -7,6 +7,7 @@ export type CloudWorkspace = {
   habits: AppState['habits'];
   clients: AppState['clients'];
   payments: AppState['payments'];
+  goals: AppState['goals'];
   theme: AppState['theme'];
   activePageId: AppState['activePageId'];
   sidebarCollapsed: AppState['sidebarCollapsed'];
@@ -58,6 +59,7 @@ export function toCloudPayload(state: AppState): CloudWorkspace {
     habits: state.habits,
     clients: state.clients,
     payments: state.payments,
+    goals: state.goals ?? [],
     theme: state.theme,
     activePageId: state.activePageId,
     sidebarCollapsed: state.sidebarCollapsed,

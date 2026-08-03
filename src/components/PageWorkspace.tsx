@@ -5,6 +5,7 @@ import { SPACE_META } from '../types';
 import { BlockEditor } from './BlockEditor';
 import { Dashboard } from './Dashboard';
 import { FreelancePanel } from './FreelancePanel';
+import { GoalsPanel } from './GoalsPanel';
 import { HabitsPanel } from './HabitsPanel';
 import { PageIcon } from './icons';
 import { TrackerView } from './TrackerView';
@@ -57,6 +58,36 @@ export function PageWorkspace() {
           Manage clients, side projects, and payments in one window.
         </p>
         <FreelancePanel pageId={activePage.id} />
+      </div>
+    );
+  }
+
+  if (activePage.space === 'goals' || activePage.id === 'page-goals') {
+    return (
+      <div className="workspace">
+        <header className="page-header">
+          <div className="page-title-row">
+            <span className="page-icon-wrap" aria-hidden>
+              <PageIcon name={activePage.icon} size={24} />
+            </span>
+            <div className="page-title-fields">
+              <p className="page-space">Goals</p>
+              <input
+                className="page-title-input"
+                value={activePage.title}
+                onChange={(e) =>
+                  updatePage(activePage.id, { title: e.target.value })
+                }
+                aria-label="Page title"
+              />
+            </div>
+          </div>
+        </header>
+        <p className="page-lead">
+          Track life goals — house, car, marriage, travel, and more — with
+          amounts, timelines, and progress.
+        </p>
+        <GoalsPanel />
       </div>
     );
   }

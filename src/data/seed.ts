@@ -73,6 +73,7 @@ export function createEmptyState(): AppState {
       isTracker: true,
       viewMode: 'list',
     }),
+    emptyPage('page-goals', 'Life Goals', 'target', 'goals'),
     emptyPage('page-habits', 'Habits & Routines', 'flame', 'habits'),
     emptyPage('page-notes', 'Quick Notes', 'note', 'notes', {
       blocks: [
@@ -87,6 +88,7 @@ export function createEmptyState(): AppState {
     habits: [],
     clients: [],
     payments: [],
+    goals: [],
     theme: DEFAULT_THEME,
     activePageId: 'page-home',
     sidebarCollapsed: false,

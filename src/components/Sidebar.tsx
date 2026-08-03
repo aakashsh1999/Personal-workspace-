@@ -18,6 +18,7 @@ const SPACE_ORDER: SpaceKind[] = [
   'career',
   'office',
   'freelance',
+  'goals',
   'habits',
   'notes',
   'custom',
@@ -38,13 +39,20 @@ export function Sidebar() {
   const filtered = useMemo(() => {
     const q = state.searchQuery.trim().toLowerCase();
     if (!q) return state.pages;
+    const goalHit = (state.goals ?? []).some(
+      (g) =>
+        g.title.toLowerCase().includes(q) ||
+        g.why.toLowerCase().includes(q) ||
+        g.notes.toLowerCase().includes(q),
+    );
     return state.pages.filter(
       (p) =>
         p.title.toLowerCase().includes(q) ||
         p.blocks.some((b) => b.content.toLowerCase().includes(q)) ||
-        p.items.some((i) => i.title.toLowerCase().includes(q)),
+        p.items.some((i) => i.title.toLowerCase().includes(q)) ||
+        (goalHit && (p.id === 'page-goals' || p.space === 'goals')),
     );
-  }, [state.pages, state.searchQuery]);
+  }, [state.pages, state.searchQuery, state.goals]);
 
   const bySpace = useMemo(() => {
     const map = new Map<SpaceKind, typeof filtered>();
