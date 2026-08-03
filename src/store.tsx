@@ -49,8 +49,14 @@ type Store = {
   deletePage: (id: string) => void;
   reorderPages: (dragId: string, dropId: string) => void;
   updateBlock: (pageId: string, blockId: string, patch: Partial<Block>) => void;
-  addBlock: (pageId: string, type?: BlockType, afterId?: string) => void;
+  addBlock: (
+    pageId: string,
+    type?: BlockType,
+    afterId?: string,
+    extras?: Partial<Pick<Block, 'content' | 'checked' | 'indent'>>,
+  ) => void;
   deleteBlock: (pageId: string, blockId: string) => void;
+  reorderBlocks: (pageId: string, dragId: string, dropId: string) => void;
   addItem: (pageId: string, title?: string) => void;
   updateItem: (pageId: string, itemId: string, patch: Partial<TrackerItem>) => void;
   deleteItem: (pageId: string, itemId: string) => void;
@@ -363,8 +369,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const addBlock = useCallback(
-    (pageId: string, type: BlockType = 'paragraph', afterId?: string) => {
-      const newBlock: Block = { id: createId(), type, content: '', checked: false };
+    (
+      pageId: string,
+      type: BlockType = 'paragraph',
+      afterId?: string,
+      extras: Partial<Pick<Block, 'content' | 'checked' | 'indent'>> = {},
+    ) => {
+      const newBlock: Block = {
+        id: createId(),
+        type,
+        content: extras.content ?? '',
+        checked: extras.checked ?? false,
+        indent: extras.indent ?? 0,
+      };
       setState((s) => ({
         ...s,
         pages: s.pages.map((p) => {
@@ -394,6 +411,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }),
     }));
   }, []);
+
+  const reorderBlocks = useCallback(
+    (pageId: string, dragId: string, dropId: string) => {
+      if (!dragId || !dropId || dragId === dropId) return;
+      setState((s) => ({
+        ...s,
+        pages: s.pages.map((p) => {
+          if (p.id !== pageId) return p;
+          const from = p.blocks.findIndex((b) => b.id === dragId);
+          const to = p.blocks.findIndex((b) => b.id === dropId);
+          if (from < 0 || to < 0) return p;
+          const blocks = [...p.blocks];
+          const [moved] = blocks.splice(from, 1);
+          blocks.splice(to, 0, moved);
+          return { ...p, blocks, updatedAt: new Date().toISOString() };
+        }),
+      }));
+    },
+    [],
+  );
 
   const addItem = useCallback((pageId: string, title?: string) => {
     const t = new Date().toISOString();
@@ -661,6 +698,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateBlock,
       addBlock,
       deleteBlock,
+      reorderBlocks,
       addItem,
       updateItem,
       deleteItem,
@@ -697,6 +735,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateBlock,
       addBlock,
       deleteBlock,
+      reorderBlocks,
       addItem,
       updateItem,
       deleteItem,

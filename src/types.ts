@@ -8,7 +8,8 @@ export type BlockType =
   | 'numbered'
   | 'divider'
   | 'callout'
-  | 'quote';
+  | 'quote'
+  | 'image';
 
 export type SpaceKind =
   | 'home'
@@ -54,6 +55,8 @@ export interface Block {
   type: BlockType;
   content: string;
   checked?: boolean;
+  /** Nesting level for lists (0 = list, 1 = sub-list). */
+  indent?: number;
 }
 
 export interface TrackerItem {

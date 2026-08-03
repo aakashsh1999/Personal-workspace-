@@ -249,8 +249,8 @@ export function PageWorkspace() {
             <div className="tracker-head">
               <h2>Notes</h2>
               <p>
-                Optional freeform notes for this page — not your task list.
-                Use headings, bullets, or to-dos if you want.
+                Optional notepad for this page — titles, lists, and images. Not
+                your task list.
               </p>
             </div>
             <BlockEditor pageId={activePage.id} blocks={activePage.blocks} />
@@ -283,7 +283,8 @@ export function PageWorkspace() {
 
       {activePage.space === 'notes' && (
         <p className="page-lead">
-          Freeform notes — write anything. This is not a task tracker.
+          Simple notepad — titles, lists, and images. Paste or drop pictures
+          anywhere.
         </p>
       )}
 
