@@ -217,11 +217,12 @@ export function Sidebar() {
         type="button"
         className="btn btn-ghost btn-sm sidebar-reset"
         onClick={() => {
-          if (confirm('Reset all data to the sample workspace?')) resetData();
+          if (confirm('Clear all your data and start with an empty workspace?'))
+            resetData();
         }}
       >
         <RotateCcw size={14} />
-        Reset sample data
+        Clear workspace
       </button>
     </aside>
   );

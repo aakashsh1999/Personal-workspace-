@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { createId, seedState } from './data/seed';
+import { createEmptyState, createId } from './data/seed';
 import { useAuth } from './lib/auth';
 import {
   loadWorkspace,
@@ -71,33 +71,39 @@ type Store = {
 
 const StoreContext = createContext<Store | null>(null);
 
+function ensureCorePages(pages: Page[]): Page[] {
+  const seed = createEmptyState();
+  let next = [...pages];
+  if (!next.some((p) => p.id === 'page-freelance')) {
+    const freelance = seed.pages.find((p) => p.id === 'page-freelance');
+    if (freelance) next.push(freelance);
+  } else {
+    next = next.map((p) =>
+      p.id === 'page-freelance' && p.title === 'Freelance'
+        ? { ...p, title: 'Side Project' }
+        : p,
+    );
+  }
+  return next;
+}
+
 function loadState(): AppState {
   try {
     const raw =
       localStorage.getItem(STORAGE_KEY) ??
       localStorage.getItem('orbit-workspace-v1');
-    if (!raw) return structuredClone(seedState);
+    if (!raw) return createEmptyState();
     const parsed = JSON.parse(raw) as Partial<AppState>;
-    if (!parsed.pages?.length) return structuredClone(seedState);
-    const seed = structuredClone(seedState);
-    let pages = [...parsed.pages];
-    if (!pages.some((p) => p.id === 'page-freelance')) {
-      const freelance = seed.pages.find((p) => p.id === 'page-freelance');
-      if (freelance) pages.push(freelance);
-    } else {
-      pages = pages.map((p) =>
-        p.id === 'page-freelance'
-          ? { ...p, title: p.title === 'Freelance' ? 'Side Project' : p.title }
-          : p,
-      );
-    }
+    if (!parsed.pages?.length) return createEmptyState();
+    const seed = createEmptyState();
+    const pages = ensureCorePages(parsed.pages);
     return {
       ...seed,
       ...parsed,
       pages,
-      habits: parsed.habits ?? seed.habits,
-      clients: parsed.clients ?? seed.clients,
-      payments: (parsed.payments ?? seed.payments).map((p) => ({
+      habits: parsed.habits ?? [],
+      clients: parsed.clients ?? [],
+      payments: (parsed.payments ?? []).map((p) => ({
         ...p,
         type: p.type ?? ('due' as const),
       })),
@@ -110,29 +116,20 @@ function loadState(): AppState {
       searchQuery: parsed.searchQuery ?? '',
     };
   } catch {
-    return structuredClone(seedState);
+    return createEmptyState();
   }
 }
 
 function fromCloud(cloud: CloudWorkspace, fallback: AppState): AppState {
-  const seed = structuredClone(seedState);
-  let pages = cloud.pages?.length ? [...cloud.pages] : [...fallback.pages];
-  if (!pages.some((p) => p.id === 'page-freelance')) {
-    const freelance = seed.pages.find((p) => p.id === 'page-freelance');
-    if (freelance) pages.push(freelance);
-  } else {
-    pages = pages.map((p) =>
-      p.id === 'page-freelance' && p.title === 'Freelance'
-        ? { ...p, title: 'Side Project' }
-        : p,
-    );
-  }
+  const pages = ensureCorePages(
+    cloud.pages?.length ? cloud.pages : fallback.pages,
+  );
   return {
     ...fallback,
     pages,
-    habits: cloud.habits ?? fallback.habits,
-    clients: cloud.clients ?? fallback.clients,
-    payments: (cloud.payments ?? fallback.payments).map((p) => ({
+    habits: cloud.habits ?? [],
+    clients: cloud.clients ?? [],
+    payments: (cloud.payments ?? []).map((p) => ({
       ...p,
       type: p.type ?? ('due' as const),
     })),
@@ -182,7 +179,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           skipCloudSave.current = true;
           setState(fromCloud(cloud, stateRef.current));
         } else {
-          await saveWorkspace(user.uid, stateRef.current);
+          // New account: always start blank (don't upload leftover local demo data).
+          const fresh = createEmptyState();
+          skipCloudSave.current = true;
+          setState(fresh);
+          await saveWorkspace(user.uid, fresh);
         }
         if (!cancelled) {
           setSyncStatus('synced');
@@ -546,7 +547,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetData = useCallback(() => {
-    const fresh = structuredClone(seedState);
+    const fresh = createEmptyState();
     setState(fresh);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
   }, []);
