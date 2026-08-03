@@ -1,29 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type DragEvent } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
+  GripVertical,
   Plus,
   RotateCcw,
   Search,
 } from 'lucide-react';
 import { useStore } from '../store';
-import type { SpaceKind } from '../types';
 import { SPACE_META } from '../types';
 import { PageIcon } from './icons';
-
-const SPACE_ORDER: SpaceKind[] = [
-  'home',
-  'tasks',
-  'learning',
-  'career',
-  'office',
-  'freelance',
-  'finance',
-  'goals',
-  'habits',
-  'notes',
-  'custom',
-];
 
 export function Sidebar() {
   const {
@@ -33,9 +19,14 @@ export function Sidebar() {
     setSearchQuery,
     addPage,
     deletePage,
+    reorderPages,
     resetData,
   } = useStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  const searching = state.searchQuery.trim().length > 0;
 
   const filtered = useMemo(() => {
     const q = state.searchQuery.trim().toLowerCase();
@@ -55,16 +46,35 @@ export function Sidebar() {
     );
   }, [state.pages, state.searchQuery, state.goals]);
 
-  const bySpace = useMemo(() => {
-    const map = new Map<SpaceKind, typeof filtered>();
-    for (const space of SPACE_ORDER) map.set(space, []);
-    for (const page of filtered) {
-      const list = map.get(page.space) ?? [];
-      list.push(page);
-      map.set(page.space, list);
+  function onDragStart(e: DragEvent, id: string) {
+    if (searching) {
+      e.preventDefault();
+      return;
     }
-    return map;
-  }, [filtered]);
+    setDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  }
+
+  function onDragOver(e: DragEvent, id: string) {
+    if (!dragId || dragId === id || searching) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setOverId(id);
+  }
+
+  function onDrop(e: DragEvent, id: string) {
+    e.preventDefault();
+    const from = e.dataTransfer.getData('text/plain') || dragId;
+    if (from) reorderPages(from, id);
+    setDragId(null);
+    setOverId(null);
+  }
+
+  function onDragEnd() {
+    setDragId(null);
+    setOverId(null);
+  }
 
   if (state.sidebarCollapsed) {
     return (
@@ -78,7 +88,7 @@ export function Sidebar() {
           <ChevronRight size={18} />
         </button>
         <div className="sidebar-rail">
-          {state.pages.slice(0, 8).map((p) => (
+          {state.pages.slice(0, 10).map((p) => (
             <button
               key={p.id}
               type="button"
@@ -180,46 +190,67 @@ export function Sidebar() {
             </div>
           )}
         </div>
+        {!searching && (
+          <p className="sidebar-hint">Drag items to reorder</p>
+        )}
       </div>
 
-      <nav className="sidebar-nav" aria-label="Spaces">
-        {SPACE_ORDER.map((space) => {
-          const pages = bySpace.get(space) ?? [];
-          if (!pages.length && space !== 'custom') return null;
-          if (space === 'custom' && !pages.length) return null;
+      <nav className="sidebar-nav" aria-label="Pages">
+        {filtered.map((page) => {
+          const canDrag = !searching;
           return (
-            <div key={space} className="nav-group">
-              <div className="nav-group-label">{SPACE_META[space].label}</div>
-              {pages.map((page) => (
-                <div
-                  key={page.id}
-                  className={`nav-item ${state.activePageId === page.id ? 'is-active' : ''}`}
+            <div
+              key={page.id}
+              className={[
+                'nav-item',
+                state.activePageId === page.id ? 'is-active' : '',
+                dragId === page.id ? 'is-dragging' : '',
+                overId === page.id && dragId !== page.id ? 'is-drop-target' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              draggable={canDrag}
+              onDragStart={(e) => onDragStart(e, page.id)}
+              onDragOver={(e) => onDragOver(e, page.id)}
+              onDrop={(e) => onDrop(e, page.id)}
+              onDragEnd={onDragEnd}
+            >
+              {canDrag && (
+                <span className="nav-grip" aria-hidden title="Drag to reorder">
+                  <GripVertical size={14} />
+                </span>
+              )}
+              <button
+                type="button"
+                className="nav-item-btn"
+                onClick={() => setActivePageId(page.id)}
+              >
+                <PageIcon name={page.icon} size={15} />
+                <span className="nav-item-text">
+                  <span className="nav-item-title">{page.title}</span>
+                  <span className="nav-item-space">
+                    {SPACE_META[page.space]?.label ?? page.space}
+                  </span>
+                </span>
+              </button>
+              {page.id !== 'page-home' && page.id !== 'page-finance' && (
+                <button
+                  type="button"
+                  className="nav-delete"
+                  aria-label={`Delete ${page.title}`}
+                  onClick={() => {
+                    if (confirm(`Delete “${page.title}”?`)) deletePage(page.id);
+                  }}
                 >
-                  <button
-                    type="button"
-                    className="nav-item-btn"
-                    onClick={() => setActivePageId(page.id)}
-                  >
-                    <PageIcon name={page.icon} size={15} />
-                    <span>{page.title}</span>
-                  </button>
-                  {page.id !== 'page-home' && (
-                    <button
-                      type="button"
-                      className="nav-delete"
-                      aria-label={`Delete ${page.title}`}
-                      onClick={() => {
-                        if (confirm(`Delete “${page.title}”?`)) deletePage(page.id);
-                      }}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
+                  ×
+                </button>
+              )}
             </div>
           );
         })}
+        {filtered.length === 0 && (
+          <p className="empty sidebar-empty">No matching pages.</p>
+        )}
       </nav>
 
       <button

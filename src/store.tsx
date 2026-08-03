@@ -47,6 +47,7 @@ type Store = {
   updatePage: (id: string, patch: Partial<Page>) => void;
   addPage: (space: SpaceKind, isTracker?: boolean) => void;
   deletePage: (id: string) => void;
+  reorderPages: (dragId: string, dropId: string) => void;
   updateBlock: (pageId: string, blockId: string, patch: Partial<Block>) => void;
   addBlock: (pageId: string, type?: BlockType, afterId?: string) => void;
   deleteBlock: (pageId: string, blockId: string) => void;
@@ -325,6 +326,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         activePageId:
           s.activePageId === id ? pages[0]?.id ?? 'page-home' : s.activePageId,
       };
+    });
+  }, []);
+
+  const reorderPages = useCallback((dragId: string, dropId: string) => {
+    if (!dragId || !dropId || dragId === dropId) return;
+    setState((s) => {
+      const from = s.pages.findIndex((p) => p.id === dragId);
+      const to = s.pages.findIndex((p) => p.id === dropId);
+      if (from < 0 || to < 0) return s;
+      const pages = [...s.pages];
+      const [moved] = pages.splice(from, 1);
+      pages.splice(to, 0, moved);
+      return { ...s, pages };
     });
   }, []);
 
@@ -643,6 +657,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatePage,
       addPage,
       deletePage,
+      reorderPages,
       updateBlock,
       addBlock,
       deleteBlock,
@@ -678,6 +693,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatePage,
       addPage,
       deletePage,
+      reorderPages,
       updateBlock,
       addBlock,
       deleteBlock,
