@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../lib/auth';
+import { Button } from './ui';
 
 export function AuthScreen() {
   const { signIn, signUp, error, clearError } = useAuth();
@@ -91,13 +92,13 @@ export function AuthScreen() {
             </p>
           )}
 
-          <button type="submit" className="btn btn-primary" disabled={busy}>
+          <Button type="submit" className="w-full" disabled={busy}>
             {busy
               ? 'Please wait…'
               : mode === 'signin'
                 ? 'Sign in'
                 : 'Create account'}
-          </button>
+          </Button>
         </form>
 
         <p className="auth-switch">

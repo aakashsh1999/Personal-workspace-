@@ -34,7 +34,7 @@ function Shell() {
         Skip to content
       </a>
       <Sidebar />
-      <div className="main">
+      <div className="main min-w-0">
         <header className="topbar">
           <button
             type="button"
@@ -44,12 +44,16 @@ function Shell() {
           >
             <Menu size={18} />
           </button>
-          <div className="topbar-crumb">
-            <span>Orbit</span>
-            <span aria-hidden>/</span>
-            <span>{activePage?.title ?? 'Workspace'}</span>
+          <div className="topbar-crumb items-center text-sm">
+            <span className="font-medium text-[var(--muted)]">Orbit</span>
+            <span aria-hidden className="text-[var(--line)]">
+              /
+            </span>
+            <span className="font-semibold text-[var(--ink)]">
+              {activePage?.title ?? 'Workspace'}
+            </span>
           </div>
-          <div className="topbar-actions">
+          <div className="topbar-actions ml-auto flex items-center gap-2.5">
             <ThemePicker />
             <AuthControls syncStatus={syncStatus} />
           </div>

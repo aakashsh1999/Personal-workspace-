@@ -107,12 +107,12 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
+      <div className="sidebar-brand px-1">
         <div className="brand-mark" aria-hidden>
           <span />
         </div>
-        <div>
-          <div className="brand-name">Orbit</div>
+        <div className="min-w-0">
+          <div className="brand-name tracking-tight">Orbit</div>
           <div className="brand-sub">Personal workspace</div>
         </div>
         <button
@@ -125,7 +125,7 @@ export function Sidebar() {
         </button>
       </div>
 
-      <label className="search-field">
+      <label className="search-field rounded-xl border border-[var(--line)] bg-[var(--surface-solid)]">
         <Search size={15} aria-hidden />
         <input
           type="search"

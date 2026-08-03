@@ -1,12 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import 'tailwindcss';
 
 :root {
-  --ink: #14212b;
-  --ink-soft: #3d4f5f;
-  --muted: #6b7c8a;
-  --line: rgba(20, 33, 43, 0.1);
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-solid: #f7fafc;
+  /* shadcn/Tremor-inspired admin tokens — teal brand kept */
+  --ink: #0f172a;
+  --ink-soft: #334155;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --surface: rgba(255, 255, 255, 0.86);
+  --surface-solid: #f8fafc;
   --panel: #ffffff;
   --teal: #0f766e;
   --teal-deep: #115e59;
@@ -17,12 +19,13 @@
   --gold: #b45309;
   --green: #15803d;
   --danger: #b91c1c;
-  --radius: 14px;
-  --radius-sm: 10px;
-  --shadow: 0 10px 30px rgba(20, 33, 43, 0.08);
+  --radius: 16px;
+  --radius-sm: 12px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
   --font-display: 'Outfit', system-ui, sans-serif;
   --font-body: 'Source Sans 3', system-ui, sans-serif;
-  --sidebar-w: 280px;
+  --sidebar-w: 272px;
   --ease: 180ms ease;
   color: var(--ink);
   font-family: var(--font-body);
@@ -49,9 +52,9 @@ body,
 body {
   min-height: 100vh;
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(15, 118, 110, 0.16), transparent 55%),
-    radial-gradient(900px 500px at 90% 0%, rgba(3, 105, 161, 0.12), transparent 50%),
-    linear-gradient(165deg, #e7eef4 0%, #f4f7fa 45%, #eef5f3 100%);
+    radial-gradient(900px 480px at 0% -5%, rgba(15, 118, 110, 0.1), transparent 55%),
+    radial-gradient(700px 420px at 100% 0%, rgba(3, 105, 161, 0.08), transparent 50%),
+    linear-gradient(180deg, #f1f5f9 0%, #f8fafc 40%, #eef2f6 100%);
   color: var(--ink);
 }
 
@@ -93,11 +96,11 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px 14px;
+  padding: 16px 12px;
   border-right: 1px solid var(--line);
-  background: rgba(248, 251, 252, 0.88);
-  backdrop-filter: blur(14px);
+  background: #ffffff;
   z-index: 20;
+  box-shadow: inset -1px 0 0 transparent;
 }
 
 .sidebar--collapsed {
@@ -226,26 +229,24 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 11px;
+  border-radius: 12px;
   border: 1px solid transparent;
   padding: 10px 14px;
-  transition: background var(--ease), border-color var(--ease), transform var(--ease),
-    box-shadow var(--ease);
-}
-
-.btn:hover {
-  transform: translateY(-1px);
+  font-weight: 600;
+  transition: background var(--ease), border-color var(--ease), box-shadow var(--ease),
+    color var(--ease);
 }
 
 .btn-sm {
-  padding: 8px 11px;
-  font-size: 0.92rem;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  min-height: 36px;
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--teal) 80%, white), var(--teal));
+  background: var(--teal);
   color: white;
-  box-shadow: 0 8px 16px color-mix(in srgb, var(--teal) 30%, transparent);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
@@ -255,10 +256,12 @@ textarea:focus-visible {
 .btn-secondary {
   background: white;
   border-color: var(--line);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover {
-  border-color: rgba(15, 118, 110, 0.35);
+  background: var(--surface-solid);
+  border-color: #cbd5e1;
 }
 
 .btn-ghost {
@@ -302,12 +305,12 @@ textarea:focus-visible {
   cursor: grabbing;
 }
 
-.nav-item:hover,
-.nav-item.is-active {
-  background: rgba(15, 118, 110, 0.1);
+.nav-item:hover {
+  background: var(--surface-solid);
 }
 
 .nav-item.is-active {
+  background: color-mix(in srgb, var(--teal) 10%, white);
   box-shadow: inset 3px 0 0 var(--teal);
 }
 
@@ -433,9 +436,9 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 22px;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--line);
-  background: rgba(247, 250, 252, 0.75);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
 }
 
@@ -533,10 +536,10 @@ textarea:focus-visible {
 .auth-screen-card {
   width: min(440px, 100%);
   background: white;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
-  padding: 28px 24px;
+  padding: 32px 28px;
   animation: rise 180ms ease;
 }
 
@@ -604,11 +607,16 @@ textarea:focus-visible {
 
 .auth-form input {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 10px 12px;
   background: var(--surface-solid);
   color: var(--ink);
   font-weight: 500;
+}
+
+.auth-form input:focus {
+  border-color: color-mix(in srgb, var(--teal) 45%, var(--line));
+  background: white;
 }
 
 .auth-error {
@@ -1065,7 +1073,7 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .stat {
@@ -1073,7 +1081,13 @@ textarea:focus-visible {
   border-radius: var(--radius);
   background: var(--panel);
   border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--ease), border-color var(--ease);
+}
+
+.stat:hover {
   box-shadow: var(--shadow);
+  border-color: #cbd5e1;
 }
 
 .stat-value {
@@ -1197,9 +1211,15 @@ textarea:focus-visible {
   min-height: 44px;
 }
 
-.freelance-tabs button.is-active {
+.freelance-tabs button.is-active,
+.tracker-tabs button.is-active {
   background: var(--ink);
   color: white;
+}
+
+.freelance-tabs,
+.tracker-tabs {
+  box-shadow: var(--shadow-sm);
 }
 
 .freelance-section-head {
@@ -1475,7 +1495,7 @@ textarea:focus-visible {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 16px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
 }
 
 .panel-wide {
@@ -1932,9 +1952,15 @@ textarea:focus-visible {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px;
-  box-shadow: var(--shadow);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
   animation: rise 180ms ease;
+  transition: box-shadow var(--ease), border-color var(--ease);
+}
+
+.item-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow);
 }
 
 .item-card-top {

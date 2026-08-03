@@ -6,14 +6,23 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Flame,
+  ListTodo,
   Rocket,
   Target,
   Wallet,
 } from 'lucide-react';
-
 import { useMemo, type CSSProperties } from 'react';
 import { useStore } from '../store';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../types';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  StatCard,
+} from './ui';
 
 export function Dashboard() {
   const { state, setActivePageId, toggleHabitToday } = useStore();
@@ -24,29 +33,35 @@ export function Dashboard() {
       p.items.map((i) => ({ ...i, pageId: p.id, pageTitle: p.title })),
     );
     const open = items.filter((i) => i.status !== 'done');
-    const dueToday = open.filter((i) => i.dueDate === new Date().toISOString().slice(0, 10));
-    const learning = open.filter((i) =>
-      state.pages.find((p) => p.id === i.pageId)?.space === 'learning',
+    const dueToday = open.filter(
+      (i) => i.dueDate === new Date().toISOString().slice(0, 10),
     );
-    const career = open.filter((i) =>
-      state.pages.find((p) => p.id === i.pageId)?.space === 'career',
+    const learning = open.filter(
+      (i) =>
+        state.pages.find((p) => p.id === i.pageId)?.space === 'learning',
     );
-    const done = items.filter((i) => i.status === 'done').length;
+    const career = open.filter(
+      (i) => state.pages.find((p) => p.id === i.pageId)?.space === 'career',
+    );
     const habitDone = state.habits.filter((h) =>
       h.days.some(
         (d) => d.date === new Date().toISOString().slice(0, 10) && d.done,
       ),
     ).length;
     const pendingPay = (state.payments ?? [])
-      .filter((p) => p.status === 'sent' || p.status === 'overdue' || p.status === 'draft')
+      .filter(
+        (p) =>
+          p.status === 'sent' || p.status === 'overdue' || p.status === 'draft',
+      )
       .reduce((sum, p) => sum + p.amount, 0);
-    const overduePay = (state.payments ?? []).filter((p) => p.status === 'overdue').length;
+    const overduePay = (state.payments ?? []).filter(
+      (p) => p.status === 'overdue',
+    ).length;
     return {
       open: open.length,
       dueToday,
       learning,
       career,
-      done,
       habitDone,
       habitTotal: state.habits.length,
       pendingPay,
@@ -67,173 +82,236 @@ export function Dashboard() {
     { id: 'page-goals', label: 'Goals', icon: Target, hint: 'Life milestones' },
   ];
 
+  const money =
+    stats.pendingPay > 0
+      ? new Intl.NumberFormat(undefined, {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 0,
+        }).format(stats.pendingPay)
+      : '₹0';
+
   return (
-    <div className="dashboard">
-      <header className="dash-hero">
-        <p className="dash-kicker">{today}</p>
-        <h1 className="dash-title">Orbit</h1>
-        <p className="dash-lead">
-          Tasks, learning, career, office, side projects, finances, and life goals — all in one place.
+    <div className="dashboard mx-auto max-w-6xl">
+      <header className="dash-hero mb-7">
+        <p className="dash-kicker m-0 text-sm font-semibold tracking-wide text-[var(--muted)]">
+          {today}
+        </p>
+        <h1 className="dash-title mt-2">Orbit</h1>
+        <p className="dash-lead mt-3 max-w-xl text-[1.05rem] text-[var(--ink-soft)]">
+          Your personal ops console — tasks, learning, career, projects, money,
+          and goals in one calm workspace.
         </p>
       </header>
 
-      <section className="stat-row" aria-label="Overview">
-        <div className="stat">
-          <span className="stat-value">{stats.open}</span>
-          <span className="stat-label">Open items</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{stats.dueToday.length}</span>
-          <span className="stat-label">Due today</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">
-            {stats.pendingPay > 0
-              ? new Intl.NumberFormat(undefined, {
-                  style: 'currency',
-                  currency: 'INR',
-                  maximumFractionDigits: 0,
-                }).format(stats.pendingPay)
-              : '₹0'}
-          </span>
-          <span className="stat-label">
-            Payments pending{stats.overduePay ? ` · ${stats.overduePay} overdue` : ''}
-          </span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">
-            {stats.habitDone}/{stats.habitTotal}
-          </span>
-          <span className="stat-label">Habits today</span>
-        </div>
+      <section
+        className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4"
+        aria-label="Overview"
+      >
+        <StatCard
+          label="Open items"
+          value={stats.open}
+          icon={<ListTodo size={18} aria-hidden />}
+        />
+        <StatCard
+          label="Due today"
+          value={stats.dueToday.length}
+          icon={<CheckCircle2 size={18} aria-hidden />}
+        />
+        <StatCard
+          label="Payments pending"
+          value={money}
+          hint={
+            stats.overduePay
+              ? `${stats.overduePay} overdue`
+              : 'Advances & dues'
+          }
+          icon={<Wallet size={18} aria-hidden />}
+        />
+        <StatCard
+          label="Habits today"
+          value={`${stats.habitDone}/${stats.habitTotal}`}
+          icon={<Flame size={18} aria-hidden />}
+        />
       </section>
 
-      <section className="shortcut-row" aria-label="Spaces">
+      <section
+        className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+        aria-label="Spaces"
+      >
         {shortcuts.map((s) => (
           <button
             key={s.id}
             type="button"
-            className="shortcut"
             onClick={() => setActivePageId(s.id)}
+            className="group flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-3.5 text-left shadow-[var(--shadow-sm)] transition hover:border-[#cbd5e1] hover:shadow-[var(--shadow)]"
           >
-            <s.icon size={18} aria-hidden />
-            <div>
-              <div className="shortcut-label">{s.label}</div>
-              <div className="shortcut-hint">{s.hint}</div>
-            </div>
-            <ArrowRight size={16} className="shortcut-arrow" aria-hidden />
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--teal-soft)] text-[var(--teal-deep)]">
+              <s.icon size={18} aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold text-[var(--ink)]">
+                {s.label}
+              </span>
+              <span className="block text-sm text-[var(--muted)]">{s.hint}</span>
+            </span>
+            <ArrowRight
+              size={16}
+              className="text-[var(--muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--teal)]"
+              aria-hidden
+            />
           </button>
         ))}
       </section>
 
-      <div className="dash-grid">
-        <section className="panel">
-          <div className="panel-head">
-            <Target size={16} aria-hidden />
-            <h2>Focus now</h2>
-          </div>
-          {stats.focus.length === 0 ? (
-            <p className="empty">No high-priority open items. Nice calm day.</p>
-          ) : (
-            <ul className="focus-list">
-              {stats.focus.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    className="focus-item"
-                    onClick={() => setActivePageId(item.pageId)}
-                  >
-                    <span className={`prio prio-${item.priority}`}>
-                      {PRIORITY_LABELS[item.priority]}
-                    </span>
-                    <span className="focus-title">{item.title}</span>
-                    <span className="focus-meta">
-                      {STATUS_LABELS[item.status]} · {item.pageTitle}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Target size={16} className="text-[var(--teal)]" aria-hidden />
+              <CardTitle>Focus now</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {stats.focus.length === 0 ? (
+              <p className="empty m-0">No high-priority open items. Nice calm day.</p>
+            ) : (
+              <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                {stats.focus.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className="flex w-full flex-col gap-1 rounded-xl border border-transparent bg-[var(--surface-solid)] px-3 py-2.5 text-left transition hover:border-[var(--line)] hover:bg-white"
+                      onClick={() => setActivePageId(item.pageId)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            item.priority === 'urgent' ? 'danger' : 'warning'
+                          }
+                        >
+                          {PRIORITY_LABELS[item.priority]}
+                        </Badge>
+                        <span className="truncate font-semibold text-[var(--ink)]">
+                          {item.title}
+                        </span>
+                      </span>
+                      <span className="text-xs text-[var(--muted)]">
+                        {STATUS_LABELS[item.status]} · {item.pageTitle}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
-        <section className="panel">
-          <div className="panel-head">
-            <Flame size={16} aria-hidden />
-            <h2>Today’s habits</h2>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm ml-auto"
-              onClick={() => setActivePageId('page-habits')}
-            >
-              Open
-            </button>
-          </div>
-          <ul className="habit-quick">
-            {state.habits.map((h) => {
-              const done = h.days.some(
-                (d) =>
-                  d.date === new Date().toISOString().slice(0, 10) && d.done,
-              );
-              return (
-                <li key={h.id}>
-                  <button
-                    type="button"
-                    className={`habit-chip ${done ? 'is-done' : ''}`}
-                    onClick={() => toggleHabitToday(h.id)}
-                    style={{ '--habit': h.color } as CSSProperties}
-                  >
-                    <span className="habit-dot" />
-                    {h.name}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-
-        <section className="panel panel-wide">
-          <div className="panel-head">
-            <BookOpen size={16} aria-hidden />
-            <h2>Learning & career in flight</h2>
-          </div>
-          <div className="split-lists">
-            <div>
-              <h3>Learning</h3>
-              {stats.learning.length === 0 ? (
-                <p className="empty">Nothing open — add a study item.</p>
-              ) : (
-                <ul>
-                  {stats.learning.slice(0, 4).map((i) => (
-                    <li key={i.id}>
-                      <button type="button" onClick={() => setActivePageId(i.pageId)}>
-                        {i.title}
-                        <span>{i.progress}%</span>
+        <Card>
+          <CardHeader>
+            <div className="flex w-full items-center gap-2">
+              <Flame size={16} className="text-[var(--amber)]" aria-hidden />
+              <CardTitle>Today’s habits</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto"
+                onClick={() => setActivePageId('page-habits')}
+              >
+                Open
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {state.habits.length === 0 ? (
+              <p className="empty m-0">No habits yet — add some in Habits.</p>
+            ) : (
+              <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+                {state.habits.map((h) => {
+                  const done = h.days.some(
+                    (d) =>
+                      d.date === new Date().toISOString().slice(0, 10) &&
+                      d.done,
+                  );
+                  return (
+                    <li key={h.id}>
+                      <button
+                        type="button"
+                        className={`habit-chip ${done ? 'is-done' : ''}`}
+                        onClick={() => toggleHabitToday(h.id)}
+                        style={{ '--habit': h.color } as CSSProperties}
+                      >
+                        <span className="habit-dot" />
+                        {h.name}
                       </button>
                     </li>
-                  ))}
-                </ul>
-              )}
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <BookOpen size={16} className="text-[var(--sky)]" aria-hidden />
+              <CardTitle>Learning & career in flight</CardTitle>
             </div>
-            <div>
-              <h3>Career</h3>
-              {stats.career.length === 0 ? (
-                <p className="empty">No open career items.</p>
-              ) : (
-                <ul>
-                  {stats.career.slice(0, 4).map((i) => (
-                    <li key={i.id}>
-                      <button type="button" onClick={() => setActivePageId(i.pageId)}>
-                        {i.title}
-                        <span>{STATUS_LABELS[i.status]}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <h3 className="m-0 mb-3 text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
+                  Learning
+                </h3>
+                {stats.learning.length === 0 ? (
+                  <p className="empty m-0">Nothing open — add a study item.</p>
+                ) : (
+                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                    {stats.learning.slice(0, 4).map((i) => (
+                      <li key={i.id}>
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between gap-3 rounded-xl px-2 py-2 text-left hover:bg-[var(--surface-solid)]"
+                          onClick={() => setActivePageId(i.pageId)}
+                        >
+                          <span className="truncate font-medium">{i.title}</span>
+                          <Badge variant="info">{i.progress}%</Badge>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <h3 className="m-0 mb-3 text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
+                  Career
+                </h3>
+                {stats.career.length === 0 ? (
+                  <p className="empty m-0">No open career items.</p>
+                ) : (
+                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                    {stats.career.slice(0, 4).map((i) => (
+                      <li key={i.id}>
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between gap-3 rounded-xl px-2 py-2 text-left hover:bg-[var(--surface-solid)]"
+                          onClick={() => setActivePageId(i.pageId)}
+                        >
+                          <span className="truncate font-medium">{i.title}</span>
+                          <Badge variant="brand">
+                            {STATUS_LABELS[i.status]}
+                          </Badge>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
