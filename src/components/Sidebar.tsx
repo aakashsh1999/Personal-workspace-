@@ -18,6 +18,7 @@ const SPACE_ORDER: SpaceKind[] = [
   'career',
   'office',
   'freelance',
+  'finance',
   'goals',
   'habits',
   'notes',

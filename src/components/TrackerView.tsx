@@ -21,6 +21,7 @@ function ItemEditor({
         <input
           className="item-title"
           value={item.title}
+          placeholder="What needs to get done?"
           onChange={(e) => updateItem(pageId, item.id, { title: e.target.value })}
           aria-label="Item title"
         />
@@ -334,20 +335,11 @@ function TableView({ page }: { page: Page }) {
 }
 
 export function TrackerView({ page }: { page: Page }) {
-  const { addItem } = useStore();
-
   if (page.viewMode === 'board') return <BoardView page={page} />;
   if (page.viewMode === 'table') return <TableView page={page} />;
 
   return (
     <div className="list-view">
-      <button
-        type="button"
-        className="btn btn-secondary btn-sm"
-        onClick={() => addItem(page.id)}
-      >
-        <Plus size={15} /> Add item
-      </button>
       <div className="list-items">
         {page.items.map((item) => (
           <ItemEditor key={item.id} pageId={page.id} item={item} />

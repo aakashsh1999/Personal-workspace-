@@ -17,6 +17,7 @@ export type SpaceKind =
   | 'career'
   | 'office'
   | 'freelance'
+  | 'finance'
   | 'goals'
   | 'habits'
   | 'notes'
@@ -253,6 +254,7 @@ export const SPACE_META: Record<
   career: { label: 'Career', description: 'Growth & milestones' },
   office: { label: 'Office', description: 'Work projects & meetings' },
   freelance: { label: 'Side Project', description: 'Clients, projects & payments' },
+  finance: { label: 'Finances', description: 'Expenses, accounts & EMIs' },
   goals: { label: 'Goals', description: 'Life goals & milestones' },
   habits: { label: 'Habits', description: 'Streaks & routines' },
   notes: { label: 'Notes', description: 'Freeform pages' },

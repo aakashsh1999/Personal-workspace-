@@ -73,6 +73,7 @@ export function createEmptyState(): AppState {
       isTracker: true,
       viewMode: 'list',
     }),
+    emptyPage('page-finance', 'Finances', 'finance', 'finance'),
     emptyPage('page-goals', 'Life Goals', 'target', 'goals'),
     emptyPage('page-habits', 'Habits & Routines', 'flame', 'habits'),
     emptyPage('page-notes', 'Quick Notes', 'note', 'notes', {

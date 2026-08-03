@@ -88,6 +88,16 @@ function ensureCorePages(pages: Page[]): Page[] {
         : p,
     );
   }
+  if (!next.some((p) => p.id === 'page-finance')) {
+    const financePage = seed.pages.find((p) => p.id === 'page-finance');
+    if (financePage) {
+      const goalsIdx = next.findIndex((p) => p.id === 'page-goals');
+      const freelanceIdx = next.findIndex((p) => p.id === 'page-freelance');
+      if (goalsIdx >= 0) next.splice(goalsIdx, 0, financePage);
+      else if (freelanceIdx >= 0) next.splice(freelanceIdx + 1, 0, financePage);
+      else next.push(financePage);
+    }
+  }
   if (!next.some((p) => p.id === 'page-goals')) {
     const goalsPage = seed.pages.find((p) => p.id === 'page-goals');
     if (goalsPage) {
@@ -306,7 +316,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const deletePage = useCallback((id: string) => {
-    if (id === 'page-home') return;
+    if (id === 'page-home' || id === 'page-finance') return;
     setState((s) => {
       const pages = s.pages.filter((p) => p.id !== id);
       return {
@@ -371,27 +381,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const addItem = useCallback((pageId: string, title = 'New item') => {
+  const addItem = useCallback((pageId: string, title?: string) => {
     const t = new Date().toISOString();
-    const newItem: TrackerItem = {
-      id: createId(),
-      title,
-      notes: '',
-      status: 'todo',
-      priority: 'medium',
-      tags: [],
-      progress: 0,
-      createdAt: t,
-      updatedAt: t,
-    };
-    setState((s) => ({
-      ...s,
-      pages: s.pages.map((p) =>
-        p.id === pageId
-          ? { ...p, items: [newItem, ...p.items], updatedAt: t }
-          : p,
-      ),
-    }));
+    setState((s) => {
+      const page = s.pages.find((p) => p.id === pageId);
+      const defaultTitle =
+        title ?? (page?.space === 'tasks' ? 'New task' : 'New item');
+      const newItem: TrackerItem = {
+        id: createId(),
+        title: defaultTitle,
+        notes: '',
+        status: 'todo',
+        priority: 'medium',
+        tags: [],
+        progress: 0,
+        createdAt: t,
+        updatedAt: t,
+      };
+      return {
+        ...s,
+        pages: s.pages.map((p) =>
+          p.id === pageId
+            ? { ...p, items: [newItem, ...p.items], updatedAt: t }
+            : p,
+        ),
+      };
+    });
   }, []);
 
   const updateItem = useCallback(

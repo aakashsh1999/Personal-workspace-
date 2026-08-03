@@ -1,17 +1,54 @@
-import { Columns3, LayoutList, Table2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Columns3, LayoutList, NotebookPen, Table2 } from 'lucide-react';
 import { useStore } from '../store';
-import type { ViewMode } from '../types';
+import type { SpaceKind, ViewMode } from '../types';
 import { SPACE_META } from '../types';
 import { BlockEditor } from './BlockEditor';
 import { Dashboard } from './Dashboard';
+import { FinanceEmbed } from './FinanceEmbed';
 import { FreelancePanel } from './FreelancePanel';
 import { GoalsPanel } from './GoalsPanel';
 import { HabitsPanel } from './HabitsPanel';
 import { PageIcon } from './icons';
 import { TrackerView } from './TrackerView';
 
+const TRACKER_COPY: Partial<
+  Record<SpaceKind, { lead: string; tasksLabel: string; empty: string }>
+> = {
+  tasks: {
+    lead: 'Add the things you need to finish today. Switch List, Board, or Table anytime.',
+    tasksLabel: 'Tasks',
+    empty: 'No tasks yet. Add your first one to get started.',
+  },
+  learning: {
+    lead: 'Track courses, books, and skills you’re working on.',
+    tasksLabel: 'Items',
+    empty: 'No learning items yet. Add something you’re studying.',
+  },
+  career: {
+    lead: 'Track career milestones, applications, and growth actions.',
+    tasksLabel: 'Items',
+    empty: 'No career items yet. Add a milestone or next step.',
+  },
+  office: {
+    lead: 'Track office projects, meetings, and deliverables.',
+    tasksLabel: 'Items',
+    empty: 'No office items yet. Add a project or follow-up.',
+  },
+  custom: {
+    lead: 'Your custom board — add items and move them through status.',
+    tasksLabel: 'Items',
+    empty: 'No items yet. Add one to start tracking.',
+  },
+};
+
 export function PageWorkspace() {
   const { activePage, updatePage, setViewMode, addItem } = useStore();
+  const [trackerTab, setTrackerTab] = useState<'tasks' | 'notes'>('tasks');
+
+  useEffect(() => {
+    setTrackerTab('tasks');
+  }, [activePage?.id]);
 
   if (!activePage) {
     return (
@@ -62,6 +99,14 @@ export function PageWorkspace() {
     );
   }
 
+  if (activePage.space === 'finance' || activePage.id === 'page-finance') {
+    return (
+      <div className="workspace workspace--finance">
+        <FinanceEmbed />
+      </div>
+    );
+  }
+
   if (activePage.space === 'goals' || activePage.id === 'page-goals') {
     return (
       <div className="workspace">
@@ -98,6 +143,123 @@ export function PageWorkspace() {
     { mode: 'table', icon: Table2, label: 'Table' },
   ];
 
+  const copy =
+    TRACKER_COPY[activePage.space] ??
+    TRACKER_COPY.custom ?? {
+      lead: 'Track items with status, priority, and due dates.',
+      tasksLabel: 'Items',
+      empty: 'No items yet. Add one to get started.',
+    };
+
+  if (activePage.isTracker) {
+    return (
+      <div className="workspace">
+        <header className="page-header">
+          <div className="page-title-row">
+            <span className="page-icon-wrap" aria-hidden>
+              <PageIcon name={activePage.icon} size={22} />
+            </span>
+            <div className="page-title-fields">
+              <p className="page-space">{SPACE_META[activePage.space].label}</p>
+              <input
+                className="page-title-input"
+                value={activePage.title}
+                onChange={(e) =>
+                  updatePage(activePage.id, { title: e.target.value })
+                }
+                aria-label="Page title"
+              />
+            </div>
+          </div>
+
+          {trackerTab === 'tasks' && (
+            <div className="page-toolbar">
+              <div className="view-switch" role="group" aria-label="View mode">
+                {views.map((v) => (
+                  <button
+                    key={v.mode}
+                    type="button"
+                    className={activePage.viewMode === v.mode ? 'is-active' : ''}
+                    onClick={() => setViewMode(activePage.id, v.mode)}
+                  >
+                    <v.icon size={15} aria-hidden />
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => addItem(activePage.id)}
+              >
+                Add {copy.tasksLabel === 'Tasks' ? 'task' : 'item'}
+              </button>
+            </div>
+          )}
+        </header>
+
+        <p className="page-lead">{copy.lead}</p>
+
+        <div
+          className="tracker-tabs freelance-tabs"
+          role="tablist"
+          aria-label="Page sections"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={trackerTab === 'tasks'}
+            className={trackerTab === 'tasks' ? 'is-active' : ''}
+            onClick={() => setTrackerTab('tasks')}
+          >
+            <LayoutList size={15} aria-hidden />
+            {copy.tasksLabel}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={trackerTab === 'notes'}
+            className={trackerTab === 'notes' ? 'is-active' : ''}
+            onClick={() => setTrackerTab('notes')}
+          >
+            <NotebookPen size={15} aria-hidden />
+            Notes
+          </button>
+        </div>
+
+        {trackerTab === 'tasks' ? (
+          <section className="tracker-section" aria-label={copy.tasksLabel}>
+            {activePage.items.length === 0 ? (
+              <div className="tracker-empty">
+                <p>{copy.empty}</p>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => addItem(activePage.id)}
+                >
+                  Add {copy.tasksLabel === 'Tasks' ? 'task' : 'item'}
+                </button>
+              </div>
+            ) : (
+              <TrackerView page={activePage} />
+            )}
+          </section>
+        ) : (
+          <section className="notes-section" aria-label="Notes">
+            <div className="tracker-head">
+              <h2>Notes</h2>
+              <p>
+                Optional freeform notes for this page — not your task list.
+                Use headings, bullets, or to-dos if you want.
+              </p>
+            </div>
+            <BlockEditor pageId={activePage.id} blocks={activePage.blocks} />
+          </section>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="workspace">
       <header className="page-header">
@@ -110,51 +272,24 @@ export function PageWorkspace() {
             <input
               className="page-title-input"
               value={activePage.title}
-              onChange={(e) => updatePage(activePage.id, { title: e.target.value })}
+              onChange={(e) =>
+                updatePage(activePage.id, { title: e.target.value })
+              }
               aria-label="Page title"
             />
           </div>
         </div>
-
-        {activePage.isTracker && (
-          <div className="page-toolbar">
-            <div className="view-switch" role="group" aria-label="View mode">
-              {views.map((v) => (
-                <button
-                  key={v.mode}
-                  type="button"
-                  className={activePage.viewMode === v.mode ? 'is-active' : ''}
-                  onClick={() => setViewMode(activePage.id, v.mode)}
-                >
-                  <v.icon size={15} aria-hidden />
-                  {v.label}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={() => addItem(activePage.id)}
-            >
-              Add item
-            </button>
-          </div>
-        )}
       </header>
+
+      {activePage.space === 'notes' && (
+        <p className="page-lead">
+          Freeform notes — write anything. This is not a task tracker.
+        </p>
+      )}
 
       <BlockEditor pageId={activePage.id} blocks={activePage.blocks} />
 
       {activePage.space === 'habits' && <HabitsPanel />}
-
-      {activePage.isTracker && (
-        <section className="tracker-section">
-          <div className="tracker-head">
-            <h2>Tracker</h2>
-            <p>Status, priority, progress, due dates, and tags.</p>
-          </div>
-          <TrackerView page={activePage} />
-        </section>
-      )}
     </div>
   );
 }

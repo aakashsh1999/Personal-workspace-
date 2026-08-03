@@ -37,6 +37,7 @@ export function BlockEditor({ pageId, blocks }: { pageId: string; blocks: Block[
             className="block-type"
             value={block.type}
             aria-label="Block type"
+            title="Change block type"
             onChange={(e) =>
               updateBlock(pageId, block.id, { type: e.target.value as BlockType })
             }

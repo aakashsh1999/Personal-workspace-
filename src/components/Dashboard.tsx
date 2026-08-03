@@ -4,6 +4,7 @@ import {
   BookOpen,
   Briefcase,
   CheckCircle2,
+  CircleDollarSign,
   Flame,
   Rocket,
   Target,
@@ -62,6 +63,7 @@ export function Dashboard() {
     { id: 'page-career', label: 'Career', icon: Rocket, hint: 'Growth path' },
     { id: 'page-office', label: 'Office', icon: Briefcase, hint: 'Work projects' },
     { id: 'page-freelance', label: 'Side Project', icon: Wallet, hint: 'Clients & payments' },
+    { id: 'page-finance', label: 'Finances', icon: CircleDollarSign, hint: 'Expenses & EMIs' },
     { id: 'page-goals', label: 'Goals', icon: Target, hint: 'Life milestones' },
   ];
 
@@ -71,7 +73,7 @@ export function Dashboard() {
         <p className="dash-kicker">{today}</p>
         <h1 className="dash-title">Orbit</h1>
         <p className="dash-lead">
-          Tasks, learning, career, office, side projects, and life goals — all in one place.
+          Tasks, learning, career, office, side projects, finances, and life goals — all in one place.
         </p>
       </header>
 
