@@ -72,7 +72,8 @@ type Store = {
   setViewMode: (pageId: string, mode: ViewMode) => void;
   toggleHabitToday: (habitId: string) => void;
   toggleHabitDay: (habitId: string, date: string) => void;
-  addHabit: (name: string) => void;
+  addHabit: (name: string, color?: string) => void;
+  updateHabit: (habitId: string, patch: Partial<Pick<Habit, 'name' | 'color'>>) => void;
   deleteHabit: (habitId: string) => void;
   addClient: (partial?: Partial<Client>) => void;
   updateClient: (id: string, patch: Partial<Client>) => void;
@@ -607,16 +608,46 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [toggleHabitDay],
   );
 
-  const addHabit = useCallback((name: string) => {
-    const colors = ['#0F766E', '#0369A1', '#C2410C', '#B45309', '#4D7C0F'];
-    const habit: Habit = {
-      id: createId(),
-      name,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      days: [],
-    };
-    setState((s) => ({ ...s, habits: [...s.habits, habit] }));
+  const addHabit = useCallback((name: string, color?: string) => {
+    setState((s) => {
+      const palette = [
+        '#0d9488',
+        '#0284c7',
+        '#16a34a',
+        '#d97706',
+        '#ea580c',
+        '#e11d48',
+        '#7c3aed',
+        '#2563eb',
+        '#0891b2',
+        '#ca8a04',
+      ];
+      const used = new Set(s.habits.map((h) => h.color.toLowerCase()));
+      const next =
+        color ??
+        palette.find((c) => !used.has(c.toLowerCase())) ??
+        palette[s.habits.length % palette.length];
+      const habit: Habit = {
+        id: createId(),
+        name,
+        color: next,
+        days: [],
+      };
+      return { ...s, habits: [...s.habits, habit] };
+    });
   }, []);
+
+  const updateHabit = useCallback(
+    (habitId: string, patch: Partial<Pick<Habit, 'name' | 'color'>>) => {
+      setState((s) => ({
+        ...s,
+        habits: s.habits.map((h) =>
+          h.id === habitId ? { ...h, ...patch } : h,
+        ),
+      }));
+    },
+    [],
+  );
 
   const deleteHabit = useCallback((habitId: string) => {
     setState((s) => ({
@@ -791,6 +822,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleHabitToday,
       toggleHabitDay,
       addHabit,
+      updateHabit,
       deleteHabit,
       addClient,
       updateClient,
@@ -832,6 +864,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleHabitToday,
       toggleHabitDay,
       addHabit,
+      updateHabit,
       deleteHabit,
       addClient,
       updateClient,

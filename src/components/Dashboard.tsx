@@ -23,6 +23,8 @@ import {
   CardHeader,
   CardTitle,
   StatCard,
+  iconToneClass,
+  type IconTone,
 } from './ui';
 
 export function Dashboard() {
@@ -73,14 +75,20 @@ export function Dashboard() {
     };
   }, [state.pages, state.habits, state.payments]);
 
-  const shortcuts = [
-    { id: 'page-tasks', label: 'Tasks', icon: CheckCircle2, hint: 'Daily execution' },
-    { id: 'page-learning', label: 'Learning', icon: BookOpen, hint: 'Skills & study' },
-    { id: 'page-career', label: 'Career', icon: Rocket, hint: 'Growth path' },
-    { id: 'page-office', label: 'Office', icon: Briefcase, hint: 'Work projects' },
-    { id: 'page-freelance', label: 'Side Project', icon: Wallet, hint: 'Clients & payments' },
-    { id: 'page-finance', label: 'Finances', icon: CircleDollarSign, hint: 'Expenses & EMIs' },
-    { id: 'page-goals', label: 'Goals', icon: Target, hint: 'Life milestones' },
+  const shortcuts: {
+    id: string;
+    label: string;
+    icon: typeof CheckCircle2;
+    hint: string;
+    tone: IconTone;
+  }[] = [
+    { id: 'page-tasks', label: 'Tasks', icon: CheckCircle2, hint: 'Daily execution', tone: 'emerald' },
+    { id: 'page-learning', label: 'Learning', icon: BookOpen, hint: 'Skills & study', tone: 'sky' },
+    { id: 'page-career', label: 'Career', icon: Rocket, hint: 'Growth path', tone: 'violet' },
+    { id: 'page-office', label: 'Office', icon: Briefcase, hint: 'Work projects', tone: 'blue' },
+    { id: 'page-freelance', label: 'Side Project', icon: Wallet, hint: 'Clients & payments', tone: 'teal' },
+    { id: 'page-finance', label: 'Finances', icon: CircleDollarSign, hint: 'Expenses & EMIs', tone: 'amber' },
+    { id: 'page-goals', label: 'Goals', icon: Target, hint: 'Life milestones', tone: 'rose' },
   ];
 
   const money =
@@ -113,11 +121,13 @@ export function Dashboard() {
         <StatCard
           label="Open items"
           value={stats.open}
+          iconTone="sky"
           icon={<ListTodo size={16} aria-hidden />}
         />
         <StatCard
           label="Due today"
           value={stats.dueToday.length}
+          iconTone="emerald"
           icon={<CheckCircle2 size={16} aria-hidden />}
         />
         <StatCard
@@ -128,11 +138,13 @@ export function Dashboard() {
               ? `${stats.overduePay} overdue`
               : 'Advances & dues'
           }
+          iconTone="amber"
           icon={<Wallet size={16} aria-hidden />}
         />
         <StatCard
           label="Habits today"
           value={`${stats.habitDone}/${stats.habitTotal}`}
+          iconTone="orange"
           icon={<Flame size={16} aria-hidden />}
         />
       </section>
@@ -148,7 +160,9 @@ export function Dashboard() {
             onClick={() => setActivePageId(s.id)}
             className="group flex items-center gap-2.5 rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-left shadow-[var(--shadow-sm)] transition hover:border-[#cbd5e1] hover:shadow-[var(--shadow)]"
           >
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--teal-soft)] text-[var(--teal-deep)]">
+            <span
+              className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconToneClass[s.tone]}`}
+            >
               <s.icon size={15} aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
@@ -172,7 +186,9 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Target size={16} className="text-[var(--teal)]" aria-hidden />
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-700">
+                <Target size={15} aria-hidden />
+              </span>
               <CardTitle>Focus now</CardTitle>
             </div>
           </CardHeader>
@@ -214,7 +230,9 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex w-full items-center gap-2">
-              <Flame size={16} className="text-[var(--amber)]" aria-hidden />
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50 text-orange-700">
+                <Flame size={15} aria-hidden />
+              </span>
               <CardTitle>Today’s habits</CardTitle>
               <Button
                 variant="ghost"
@@ -259,7 +277,9 @@ export function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <BookOpen size={16} className="text-[var(--sky)]" aria-hidden />
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 text-sky-700">
+                <BookOpen size={15} aria-hidden />
+              </span>
               <CardTitle>Learning & career in flight</CardTitle>
             </div>
           </CardHeader>
