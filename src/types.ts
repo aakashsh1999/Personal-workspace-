@@ -121,6 +121,14 @@ export interface Goal {
   updatedAt: string;
 }
 
+export interface SavedNote {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Page {
   id: string;
   title: string;
@@ -130,6 +138,9 @@ export interface Page {
   blocks: Block[];
   /** TipTap HTML for the rich notepad (preferred over blocks for notes). */
   richContent?: string;
+  /** Multiple saved notes for notepad pages / Notes tabs. */
+  savedNotes?: SavedNote[];
+  activeNoteId?: string;
   items: TrackerItem[];
   viewMode: ViewMode;
   isTracker: boolean;

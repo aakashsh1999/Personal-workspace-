@@ -250,12 +250,25 @@ function ItemRow({
         />
       </label>
       <div className="item-edit-actions">
-        <Button variant="secondary" size="sm" onClick={cancel}>
-          <X size={14} aria-hidden /> Cancel
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={() => {
+            if (confirm(`Delete “${draft.title.trim() || item.title || 'this item'}”?`)) {
+              deleteItem(pageId, item.id);
+            }
+          }}
+        >
+          <Trash2 size={14} aria-hidden /> Delete
         </Button>
-        <Button variant="primary" size="sm" onClick={save}>
-          <Check size={14} aria-hidden /> Save
-        </Button>
+        <div className="item-edit-actions-end">
+          <Button variant="secondary" size="sm" onClick={cancel}>
+            <X size={14} aria-hidden /> Cancel
+          </Button>
+          <Button variant="primary" size="sm" onClick={save}>
+            <Check size={14} aria-hidden /> Save
+          </Button>
+        </div>
       </div>
     </article>
   );

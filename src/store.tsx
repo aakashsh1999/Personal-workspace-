@@ -25,6 +25,7 @@ import type {
   Habit,
   Page,
   Payment,
+  SavedNote,
   SpaceKind,
   ThemeSettings,
   TrackerItem,
@@ -60,6 +61,14 @@ type Store = {
   addItem: (pageId: string, title?: string) => void;
   updateItem: (pageId: string, itemId: string, patch: Partial<TrackerItem>) => void;
   deleteItem: (pageId: string, itemId: string) => void;
+  addNote: (pageId: string, title?: string) => string;
+  updateNote: (
+    pageId: string,
+    noteId: string,
+    patch: Partial<Pick<SavedNote, 'title' | 'content'>>,
+  ) => void;
+  deleteNote: (pageId: string, noteId: string) => void;
+  setActiveNoteId: (pageId: string, noteId: string | undefined) => void;
   setViewMode: (pageId: string, mode: ViewMode) => void;
   toggleHabitToday: (habitId: string) => void;
   toggleHabitDay: (habitId: string, date: string) => void;
@@ -496,6 +505,78 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const addNote = useCallback((pageId: string, title = 'Untitled note') => {
+    const id = createId();
+    const now = new Date().toISOString();
+    const note: SavedNote = {
+      id,
+      title,
+      content: '<p></p>',
+      createdAt: now,
+      updatedAt: now,
+    };
+    setState((s) => ({
+      ...s,
+      pages: s.pages.map((p) =>
+        p.id === pageId
+          ? {
+              ...p,
+              savedNotes: [note, ...(p.savedNotes ?? [])],
+              activeNoteId: id,
+              updatedAt: now,
+            }
+          : p,
+      ),
+    }));
+    return id;
+  }, []);
+
+  const updateNote = useCallback(
+    (
+      pageId: string,
+      noteId: string,
+      patch: Partial<Pick<SavedNote, 'title' | 'content'>>,
+    ) => {
+      const now = new Date().toISOString();
+      setState((s) => ({
+        ...s,
+        pages: s.pages.map((p) =>
+          p.id === pageId
+            ? {
+                ...p,
+                savedNotes: (p.savedNotes ?? []).map((n) =>
+                  n.id === noteId ? { ...n, ...patch, updatedAt: now } : n,
+                ),
+                updatedAt: now,
+              }
+            : p,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const deleteNote = useCallback((pageId: string, noteId: string) => {
+    const now = new Date().toISOString();
+    setState((s) => ({
+      ...s,
+      pages: s.pages.map((p) => {
+        if (p.id !== pageId) return p;
+        const savedNotes = (p.savedNotes ?? []).filter((n) => n.id !== noteId);
+        const activeNoteId =
+          p.activeNoteId === noteId ? savedNotes[0]?.id : p.activeNoteId;
+        return { ...p, savedNotes, activeNoteId, updatedAt: now };
+      }),
+    }));
+  }, []);
+
+  const setActiveNoteId = useCallback(
+    (pageId: string, noteId: string | undefined) => {
+      updatePage(pageId, { activeNoteId: noteId });
+    },
+    [updatePage],
+  );
+
   const setViewMode = useCallback((pageId: string, mode: ViewMode) => {
     updatePage(pageId, { viewMode: mode });
   }, [updatePage]);
@@ -702,6 +783,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addItem,
       updateItem,
       deleteItem,
+      addNote,
+      updateNote,
+      deleteNote,
+      setActiveNoteId,
       setViewMode,
       toggleHabitToday,
       toggleHabitDay,
@@ -739,6 +824,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addItem,
       updateItem,
       deleteItem,
+      addNote,
+      updateNote,
+      deleteNote,
+      setActiveNoteId,
       setViewMode,
       toggleHabitToday,
       toggleHabitDay,

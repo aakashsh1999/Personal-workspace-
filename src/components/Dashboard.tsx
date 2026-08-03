@@ -98,7 +98,7 @@ export function Dashboard() {
         <Text className="!text-xs !font-semibold tracking-wide text-zinc-500">
           {today}
         </Text>
-        <Heading className="mt-1 !text-[clamp(1.8rem,4vw,2.4rem)] font-[family-name:var(--font-display)]">
+        <Heading className="mt-1 !text-[clamp(1.8rem,4vw,2.4rem)] !text-zinc-950 font-[family-name:var(--font-display)] dark:!text-zinc-950">
           Orbit
         </Heading>
         <Text className="mt-1.5 max-w-lg">

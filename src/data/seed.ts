@@ -77,10 +77,8 @@ export function createEmptyState(): AppState {
     emptyPage('page-goals', 'Life Goals', 'target', 'goals'),
     emptyPage('page-habits', 'Habits & Routines', 'flame', 'habits'),
     emptyPage('page-notes', 'Quick Notes', 'note', 'notes', {
-      blocks: [
-        block('heading1', 'Scratchpad'),
-        block('paragraph', ''),
-      ],
+      savedNotes: [],
+      activeNoteId: undefined,
     }),
   ];
 

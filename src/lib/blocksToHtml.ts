@@ -1,4 +1,5 @@
-import type { Block } from '../types';
+import type { Block, Page, SavedNote } from '../types';
+import { createId } from '../data/seed';
 
 /** Convert legacy block notes into HTML for the rich text editor. */
 export function blocksToHtml(blocks: Block[]): string {
@@ -58,4 +59,50 @@ export function initialRichContent(page: {
 }): string {
   if (page.richContent && page.richContent.trim()) return page.richContent;
   return blocksToHtml(page.blocks);
+}
+
+export function htmlToPlainPreview(html: string, max = 72): string {
+  const text = html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return 'Empty note';
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+function contentLooksEmpty(html: string): boolean {
+  const plain = htmlToPlainPreview(html, 1000);
+  return plain === 'Empty note' || !plain.trim();
+}
+
+/** One-time migrate of legacy single notepad into savedNotes[]. */
+export function migrateSavedNotes(page: Page): {
+  savedNotes: SavedNote[];
+  activeNoteId?: string;
+} | null {
+  if (page.savedNotes) return null;
+
+  const content = initialRichContent(page);
+  const now = new Date().toISOString();
+
+  if (contentLooksEmpty(content)) {
+    return { savedNotes: [], activeNoteId: undefined };
+  }
+
+  const note: SavedNote = {
+    id: createId(),
+    title: 'Untitled note',
+    content,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return { savedNotes: [note], activeNoteId: note.id };
 }

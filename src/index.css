@@ -1062,10 +1062,7 @@ textarea:focus-visible {
   font-size: clamp(2.6rem, 6vw, 4rem);
   letter-spacing: -0.05em;
   line-height: 0.95;
-  background: linear-gradient(120deg, var(--ink) 20%, var(--teal) 85%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #09090b;
 }
 
 .dash-lead {
@@ -2073,6 +2070,194 @@ textarea:focus-visible {
   margin-top: 4px;
 }
 
+.notes-pad {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  min-height: 420px;
+}
+
+.notes-pad--loading {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: white;
+  min-height: 200px;
+}
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgb(9 9 11 / 0.1);
+  border-radius: 12px;
+  background: white;
+  min-height: 0;
+}
+
+.notes-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.notes-list-head h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #09090b;
+}
+
+.notes-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 4px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.notes-list-empty p {
+  margin: 0;
+}
+
+.notes-list-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.notes-list-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: #fafafa;
+  padding: 10px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.notes-list-item:hover {
+  background: #f4f4f5;
+  border-color: rgb(9 9 11 / 0.08);
+}
+
+.notes-list-item.is-active {
+  background: #ccfbf1;
+  border-color: rgb(13 148 136 / 0.35);
+}
+
+.notes-list-title {
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: #09090b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notes-list-preview {
+  font-size: 0.75rem;
+  color: #71717a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notes-list-time {
+  font-size: 0.68rem;
+  color: #a1a1aa;
+  margin-top: 2px;
+}
+
+.notes-editor {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notes-editor-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notes-title-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgb(9 9 11 / 0.1);
+  border-radius: 10px;
+  background: white;
+  padding: 10px 12px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: #09090b;
+  letter-spacing: -0.02em;
+}
+
+.notes-title-input:focus {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+
+.notes-editor-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  min-height: 320px;
+  padding: 28px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--ink-soft);
+}
+
+.notes-editor-empty p {
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .notes-pad {
+    grid-template-columns: 1fr;
+  }
+
+  .notes-list {
+    max-height: 220px;
+  }
+
+  .notes-list-items {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+  }
+
+  .notes-list-items > li {
+    min-width: 180px;
+  }
+}
+
 .tracker-empty {
   display: flex;
   flex-direction: column;
@@ -2233,11 +2418,19 @@ textarea:focus-visible {
 .item-edit-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid var(--line);
+}
+
+.item-edit-actions-end {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .item-card.is-editing {
@@ -2286,11 +2479,16 @@ textarea:focus-visible {
   width: 100%;
   border: none;
   background: transparent;
+  color: #09090b;
   font-weight: 600;
   font-size: 1.05rem;
   padding: 4px 0;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.item-title::placeholder {
+  color: #a1a1aa;
 }
 
 .item-fields {

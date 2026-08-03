@@ -285,8 +285,8 @@ export function PageWorkspace() {
       {activePage.space === 'notes' ? (
         <>
           <p className="page-lead">
-            Rich notepad — change text size, color, and style. Paste or drop
-            images anywhere.
+            Create multiple notes, name them, and write with rich text — size,
+            color, style, lists, and images.
           </p>
           <NotePad page={activePage} />
         </>
