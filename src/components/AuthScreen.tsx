@@ -1,14 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../lib/auth'
-import {
-  ErrorMessage,
-  Field,
-  FieldGroup,
-  Heading,
-  Input,
-  Label,
-  Text,
-} from './catalyst'
 import { Button } from './ui'
 
 export function AuthScreen() {
@@ -49,61 +40,68 @@ export function AuthScreen() {
           </div>
         </div>
 
-        <Heading id="auth-title" className="!text-[1.65rem]">
+        <h1
+          id="auth-title"
+          className="m-0 text-[1.65rem] font-semibold tracking-tight text-zinc-950"
+        >
           {mode === 'signin' ? 'Welcome back' : 'Create your account'}
-        </Heading>
-        <Text className="mt-2">
+        </h1>
+        <p className="mt-2 mb-0 text-sm text-zinc-500">
           Your workspace syncs to the cloud. Sign in to open tasks, side
           projects, clients, and payments.
-        </Text>
+        </p>
 
-        <form className="mt-8" onSubmit={onSubmit}>
-          <FieldGroup>
-            {mode === 'signup' && (
-              <Field>
-                <Label>Name</Label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="name"
-                  placeholder="Your name"
-                />
-              </Field>
-            )}
-            <Field>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                placeholder="you@example.com"
+        <form className="mt-8 flex flex-col gap-5" onSubmit={onSubmit}>
+          {mode === 'signup' && (
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-950">
+              Name
+              <input
+                className="rounded-xl border border-zinc-950/10 bg-white px-3.5 py-2.5 text-sm font-normal text-zinc-950 outline-none placeholder:text-zinc-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+                placeholder="Your name"
               />
-            </Field>
-            <Field>
-              <Label>Password</Label>
-              <Input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={
-                  mode === 'signup' ? 'new-password' : 'current-password'
-                }
-                placeholder="At least 6 characters"
-              />
-            </Field>
-          </FieldGroup>
+            </label>
+          )}
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-950">
+            Email
+            <input
+              type="email"
+              required
+              className="rounded-xl border border-zinc-950/10 bg-white px-3.5 py-2.5 text-sm font-normal text-zinc-950 outline-none placeholder:text-zinc-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-950">
+            Password
+            <input
+              type="password"
+              required
+              minLength={6}
+              className="rounded-xl border border-zinc-950/10 bg-white px-3.5 py-2.5 text-sm font-normal text-zinc-950 outline-none placeholder:text-zinc-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete={
+                mode === 'signup' ? 'new-password' : 'current-password'
+              }
+              placeholder="At least 6 characters"
+            />
+          </label>
 
           {error && (
-            <ErrorMessage className="mt-4" role="alert">
+            <p
+              className="m-0 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+              role="alert"
+            >
               {error}
-            </ErrorMessage>
+            </p>
           )}
 
-          <Button type="submit" className="mt-8 w-full" disabled={busy}>
+          <Button type="submit" className="w-full" disabled={busy}>
             {busy
               ? 'Please wait…'
               : mode === 'signin'
@@ -112,7 +110,7 @@ export function AuthScreen() {
           </Button>
         </form>
 
-        <Text className="mt-6">
+        <p className="mt-6 mb-0 text-sm text-zinc-500">
           {mode === 'signin' ? (
             <>
               New here?{' '}
@@ -142,7 +140,7 @@ export function AuthScreen() {
               </button>
             </>
           )}
-        </Text>
+        </p>
       </div>
     </div>
   )
