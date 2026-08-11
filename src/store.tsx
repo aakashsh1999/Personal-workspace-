@@ -169,6 +169,46 @@ function migrateProjectsFromFreelanceItems(
   });
 }
 
+/** True when the workspace has user-created content (not just seed shell pages). */
+function hasWorkspaceContent(state: AppState): boolean {
+  if ((state.clients?.length ?? 0) > 0) return true;
+  if ((state.projects?.length ?? 0) > 0) return true;
+  if ((state.payments?.length ?? 0) > 0) return true;
+  if ((state.goals?.length ?? 0) > 0) return true;
+  if ((state.habits?.length ?? 0) > 0) return true;
+
+  return state.pages.some((p) => {
+    if ((p.items?.length ?? 0) > 0) return true;
+    if ((p.savedNotes?.length ?? 0) > 0) return true;
+    if (p.richContent) {
+      const text = p.richContent.replace(/<[^>]+>/g, '').trim();
+      if (text) return true;
+    }
+    // Seed home welcome copy does not count as user data.
+    if (p.id === 'page-home') return false;
+    return p.blocks.some((b) => (b.content || '').trim().length > 0);
+  });
+}
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function normalizeCloud(raw: CloudWorkspace | null): CloudWorkspace | null {
+  if (!raw || typeof raw !== 'object') return null;
+  return {
+    pages: asArray(raw.pages),
+    habits: asArray(raw.habits),
+    clients: asArray(raw.clients),
+    projects: asArray(raw.projects),
+    payments: asArray(raw.payments),
+    goals: asArray(raw.goals),
+    theme: raw.theme ?? DEFAULT_THEME,
+    activePageId: raw.activePageId ?? 'page-home',
+    sidebarCollapsed: Boolean(raw.sidebarCollapsed),
+  };
+}
+
 function loadState(): AppState {
   try {
     const raw =
@@ -178,20 +218,23 @@ function loadState(): AppState {
     const parsed = JSON.parse(raw) as Partial<AppState>;
     if (!parsed.pages?.length) return createEmptyState();
     const seed = createEmptyState();
-    const pages = ensureCorePages(parsed.pages);
-    const projects = migrateProjectsFromFreelanceItems(pages, parsed.projects);
+    const pages = ensureCorePages(asArray(parsed.pages));
+    const projects = migrateProjectsFromFreelanceItems(
+      pages,
+      asArray(parsed.projects),
+    );
     return {
       ...seed,
       ...parsed,
       pages,
-      habits: parsed.habits ?? [],
-      clients: parsed.clients ?? [],
+      habits: asArray(parsed.habits),
+      clients: asArray(parsed.clients),
       projects,
-      payments: (parsed.payments ?? []).map((p) => ({
+      payments: asArray<Payment>(parsed.payments).map((p) => ({
         ...p,
         type: p.type ?? ('due' as const),
       })),
-      goals: parsed.goals ?? [],
+      goals: asArray(parsed.goals),
       theme: {
         ...DEFAULT_THEME,
         ...(parsed.theme ?? {}),
@@ -211,19 +254,21 @@ function fromCloud(cloud: CloudWorkspace, fallback: AppState): AppState {
   );
   const projects = migrateProjectsFromFreelanceItems(
     pages,
-    cloud.projects ?? fallback.projects,
+    cloud.projects?.length ? cloud.projects : fallback.projects,
   );
   return {
     ...fallback,
     pages,
-    habits: cloud.habits ?? [],
-    clients: cloud.clients ?? [],
+    habits: asArray(cloud.habits),
+    clients: asArray(cloud.clients),
     projects,
-    payments: (cloud.payments ?? []).map((p) => ({
+    payments: asArray<Payment>(cloud.payments).map((p) => ({
       ...p,
       type: p.type ?? ('due' as const),
     })),
-    goals: cloud.goals ?? fallback.goals ?? [],
+    goals: asArray(cloud.goals).length
+      ? asArray(cloud.goals)
+      : (fallback.goals ?? []),
     theme: { ...DEFAULT_THEME, ...(cloud.theme ?? {}) },
     activePageId: cloud.activePageId ?? fallback.activePageId,
     sidebarCollapsed: cloud.sidebarCollapsed ?? fallback.sidebarCollapsed,
@@ -271,18 +316,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const cloud = await loadWorkspace(user.uid);
+        const rawCloud = await loadWorkspace(user.uid);
         if (cancelled) return;
-        if (cloud?.pages?.length) {
+
+        const cloud = normalizeCloud(rawCloud);
+        const local = stateRef.current;
+        const cloudState = cloud
+          ? fromCloud(cloud, createEmptyState())
+          : null;
+        const cloudHasContent = cloudState
+          ? hasWorkspaceContent(cloudState)
+          : false;
+        const localHasContent = hasWorkspaceContent(local);
+
+        if (cloudHasContent && cloud) {
+          // Prefer cloud workspace for signed-in users.
           skipCloudSave.current = true;
-          setState(fromCloud(cloud, stateRef.current));
+          setState(fromCloud(cloud, local));
+        } else if (localHasContent) {
+          // Recover: keep local data and upload it (covers wiped/empty cloud docs).
+          skipCloudSave.current = true;
+          setState(local);
+          await saveWorkspace(user.uid, local);
         } else {
-          // New account: always start blank (don't upload leftover local demo data).
+          // Truly empty account — do not overwrite an existing cloud document.
           const fresh = createEmptyState();
           skipCloudSave.current = true;
           setState(fresh);
-          await saveWorkspace(user.uid, fresh);
+          if (!rawCloud) {
+            await saveWorkspace(user.uid, fresh);
+          }
         }
+
         if (!cancelled) {
           setSyncStatus('synced');
           setSyncError(null);
@@ -292,6 +357,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (!cancelled) {
           setSyncStatus('error');
           setSyncError(syncErrorMessage(err));
+          // Keep whatever local state we already have instead of wiping.
         }
       } finally {
         if (!cancelled) setHydrated(true);

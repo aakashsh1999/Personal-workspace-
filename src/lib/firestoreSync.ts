@@ -15,10 +15,10 @@ export type CloudWorkspace = {
   updatedAt?: unknown;
 };
 
-/** Firestore rejects `undefined` — strip it recursively. */
+/** Firestore rejects `undefined` — omit it (do not convert to null). */
 export function stripUndefined<T>(value: T): T {
   return JSON.parse(
-    JSON.stringify(value, (_key, v) => (v === undefined ? null : v)),
+    JSON.stringify(value, (_key, v) => (v === undefined ? undefined : v)),
   ) as T;
 }
 
@@ -56,15 +56,19 @@ function workspaceRef(uid: string) {
 
 export function toCloudPayload(state: AppState): CloudWorkspace {
   return stripUndefined({
-    pages: state.pages,
-    habits: state.habits,
-    clients: state.clients,
+    pages: state.pages ?? [],
+    habits: state.habits ?? [],
+    clients: state.clients ?? [],
     projects: state.projects ?? [],
-    payments: state.payments,
+    payments: state.payments ?? [],
     goals: state.goals ?? [],
-    theme: state.theme,
-    activePageId: state.activePageId,
-    sidebarCollapsed: state.sidebarCollapsed,
+    theme: state.theme ?? {
+      preset: 'teal',
+      primary: '#0f766e',
+      accent: '#0369a1',
+    },
+    activePageId: state.activePageId ?? 'page-home',
+    sidebarCollapsed: state.sidebarCollapsed ?? false,
   });
 }
 
