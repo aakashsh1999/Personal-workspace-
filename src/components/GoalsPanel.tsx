@@ -1,12 +1,24 @@
-import { useMemo, useState } from 'react';
-import { Plus, Target, Trash2 } from 'lucide-react';
-import { useStore } from '../store';
-import type { GoalCategory, GoalStatus, Priority } from '../types';
+import { useMemo, useState, type FormEvent } from 'react'
+import {
+  Plus,
+  Target,
+  Trash2,
+} from 'lucide-react'
+import { formatCurrency } from '../lib/money'
+import { useStore } from '../store'
+import type { Goal, GoalCategory, GoalStatus, Priority } from '../types'
 import {
   GOAL_CATEGORY_LABELS,
   GOAL_STATUS_LABELS,
   PRIORITY_LABELS,
-} from '../types';
+} from '../types'
+import {
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogTitle,
+} from './catalyst'
+import { Button } from './ui'
 
 const CATEGORIES: GoalCategory[] = [
   'vehicle',
@@ -19,7 +31,7 @@ const CATEGORIES: GoalCategory[] = [
   'health',
   'personal',
   'other',
-];
+]
 
 const STATUSES: GoalStatus[] = [
   'planning',
@@ -29,361 +41,484 @@ const STATUSES: GoalStatus[] = [
   'paused',
   'achieved',
   'cancelled',
-];
+]
 
-const PRIORITIES: Priority[] = ['low', 'medium', 'high', 'urgent'];
+const PRIORITIES: Priority[] = ['low', 'medium', 'high', 'urgent']
 
-function money(amount: number, currency = 'INR') {
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  } catch {
-    return `${currency} ${amount}`;
-  }
-}
+const FILTERS = [
+  'active',
+  'all',
+  'achieved',
+  'planning',
+  'at_risk',
+] as const
+
+type Filter = (typeof FILTERS)[number]
 
 function moneyProgress(saved: number, target: number) {
-  if (!target || target <= 0) return 0;
-  return Math.min(100, Math.round((saved / target) * 100));
+  if (!target || target <= 0) return 0
+  return Math.min(100, Math.round((saved / target) * 100))
+}
+
+function categoryBadge(cat: GoalCategory) {
+  const map: Record<GoalCategory, string> = {
+    vehicle: 'bg-blue-50 text-blue-800 border-blue-200',
+    home: 'bg-amber-50 text-amber-800 border-amber-200',
+    family: 'bg-rose-50 text-rose-800 border-rose-200',
+    financial: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    career: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+    education: 'bg-violet-50 text-violet-800 border-violet-200',
+    travel: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+    health: 'bg-teal-50 text-teal-800 border-teal-200',
+    personal: 'bg-zinc-50 text-zinc-800 border-zinc-200',
+    other: 'bg-zinc-50 text-zinc-800 border-zinc-200',
+  }
+  return map[cat]
 }
 
 export function GoalsPanel() {
-  const { state, addGoal, updateGoal, deleteGoal } = useStore();
-  const [filter, setFilter] = useState<'all' | GoalStatus | 'active'>('active');
+  const { state, addGoal, updateGoal, deleteGoal } = useStore()
+  const [filter, setFilter] = useState<Filter>('active')
+  const [editing, setEditing] = useState<Goal | null | 'new'>(null)
+  const [depositId, setDepositId] = useState<string | null>(null)
+  const [depositAmount, setDepositAmount] = useState('')
 
-  const goals = state.goals ?? [];
+  const goals = state.goals ?? []
 
   const summary = useMemo(() => {
     const open = goals.filter(
       (g) => g.status !== 'achieved' && g.status !== 'cancelled',
-    );
-    const achieved = goals.filter((g) => g.status === 'achieved').length;
-    const target = open.reduce((sum, g) => sum + (g.targetAmount || 0), 0);
-    const saved = open.reduce((sum, g) => sum + (g.savedAmount || 0), 0);
+    )
+    const achieved = goals.filter((g) => g.status === 'achieved').length
+    const target = goals.reduce((sum, g) => sum + (g.targetAmount || 0), 0)
+    const saved = goals.reduce((sum, g) => sum + (g.savedAmount || 0), 0)
     const avg =
-      open.length === 0
+      goals.length === 0
         ? 0
         : Math.round(
-            open.reduce((sum, g) => {
-              const fromMoney = moneyProgress(g.savedAmount, g.targetAmount);
-              return sum + (g.targetAmount > 0 ? fromMoney : g.progress);
-            }, 0) / open.length,
-          );
-    return { open: open.length, achieved, target, saved, avg };
-  }, [goals]);
+            goals.reduce((sum, g) => {
+              const fromMoney = moneyProgress(g.savedAmount, g.targetAmount)
+              return sum + (g.targetAmount > 0 ? fromMoney : g.progress)
+            }, 0) / goals.length,
+          )
+    return { open: open.length, achieved, target, saved, avg }
+  }, [goals])
 
   const visible = useMemo(() => {
-    if (filter === 'all') return goals;
+    if (filter === 'all') return goals
     if (filter === 'active') {
       return goals.filter(
         (g) => g.status !== 'achieved' && g.status !== 'cancelled',
-      );
+      )
     }
-    return goals.filter((g) => g.status === filter);
-  }, [goals, filter]);
+    if (filter === 'achieved') return goals.filter((g) => g.status === 'achieved')
+    if (filter === 'planning') return goals.filter((g) => g.status === 'planning')
+    return goals.filter((g) => g.status === 'at_risk')
+  }, [goals, filter])
+
+  function applyDeposit(goalId: string) {
+    const amt = parseFloat(depositAmount)
+    if (Number.isNaN(amt) || amt <= 0) return
+    const goal = goals.find((g) => g.id === goalId)
+    if (!goal) return
+    const savedAmount = Math.max(0, (goal.savedAmount || 0) + amt)
+    const progress = moneyProgress(savedAmount, goal.targetAmount)
+    const patch: Partial<Goal> = {
+      savedAmount,
+      progress,
+    }
+    if (goal.targetAmount > 0 && savedAmount >= goal.targetAmount) {
+      patch.status = 'achieved'
+      patch.achievedDate = new Date().toISOString().slice(0, 10)
+      patch.progress = 100
+    } else if (goal.status === 'achieved' && savedAmount < goal.targetAmount) {
+      patch.status = 'in_progress'
+      patch.achievedDate = undefined
+    }
+    updateGoal(goalId, patch)
+    setDepositId(null)
+    setDepositAmount('')
+  }
 
   return (
-    <div className="goals-panel freelance-panel">
-      <section className="stat-row freelance-stats" aria-label="Goals overview">
-        <div className="stat">
-          <span className="stat-value">{summary.open}</span>
-          <span className="stat-label">Active goals</span>
+    <div className="space-y-6">
+      <div className="flex items-start gap-4">
+        <div className="shrink-0 rounded-2xl border border-teal-100 bg-teal-50 p-3.5 text-teal-700 shadow-sm">
+          <Target size={28} />
         </div>
-        <div className="stat">
-          <span className="stat-value">{money(summary.target)}</span>
-          <span className="stat-label">Target amount</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{money(summary.saved)}</span>
-          <span className="stat-label">Saved so far</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{summary.avg}%</span>
-          <span className="stat-label">Avg progress</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{summary.achieved}</span>
-          <span className="stat-label">Achieved</span>
-        </div>
-      </section>
-
-      <section className="freelance-section" aria-label="Life goals">
-        <div className="freelance-section-head">
-          <h2>
-            <Target size={18} aria-hidden /> Goals
+        <div>
+          <div className="text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
+            Goals
+          </div>
+          <h2 className="m-0 text-3xl font-extrabold tracking-tight text-zinc-950">
+            Life Goals
           </h2>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={() => addGoal()}
-          >
-            <Plus size={16} aria-hidden /> Add goal
-          </button>
+          <p className="mt-1 max-w-2xl text-sm text-zinc-500">
+            Track life goals — house, car, marriage, travel, and more — with
+            amounts, timelines, and savings deposits.
+          </p>
         </div>
+      </div>
 
-        <div className="pay-type-filter" role="group" aria-label="Filter goals">
-          {(
-            [
-              ['active', 'Active'],
-              ['all', 'All'],
-              ['achieved', 'Achieved'],
-              ['planning', 'Planning'],
-              ['at_risk', 'At risk'],
-            ] as const
-          ).map(([id, label]) => (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {[
+          { label: 'Active goals', value: String(summary.open) },
+          { label: 'Target amount', value: formatCurrency(summary.target) },
+          { label: 'Saved so far', value: formatCurrency(summary.saved) },
+          { label: 'Avg progress', value: `${summary.avg}%` },
+          { label: 'Achieved', value: String(summary.achieved) },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="rounded-2xl border border-zinc-950/10 bg-white p-4 shadow-sm"
+          >
+            <div className="text-2xl font-extrabold tracking-tight text-zinc-950 sm:text-3xl">
+              {card.value}
+            </div>
+            <div className="mt-1 text-xs font-medium text-zinc-500">
+              {card.label}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-1 rounded-2xl border border-zinc-200 bg-zinc-100 p-1">
+          {FILTERS.map((st) => (
             <button
-              key={id}
+              key={st}
               type="button"
-              className={filter === id ? 'is-active' : ''}
-              aria-pressed={filter === id}
-              onClick={() => setFilter(id)}
+              onClick={() => setFilter(st)}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold capitalize transition ${
+                filter === st
+                  ? 'bg-teal-700 text-white shadow-sm'
+                  : 'text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900'
+              }`}
             >
-              {label}
+              {st.replace('_', ' ')}
             </button>
           ))}
         </div>
+        <Button size="sm" onClick={() => setEditing('new')}>
+          <Plus size={14} /> Add goal
+        </Button>
+      </div>
 
-        <div className="list-items">
+      {visible.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center">
+          <Target className="mx-auto mb-3 text-zinc-400" size={28} />
+          <p className="m-0 text-sm text-zinc-500">No goals in this filter.</p>
+          <Button className="mt-4" size="sm" onClick={() => setEditing('new')}>
+            <Plus size={14} /> Add goal
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
           {visible.map((goal) => {
-            const funded = moneyProgress(goal.savedAmount, goal.targetAmount);
-            const shownProgress =
-              goal.targetAmount > 0 ? funded : goal.progress;
+            const pct =
+              goal.targetAmount > 0
+                ? moneyProgress(goal.savedAmount, goal.targetAmount)
+                : goal.progress
             return (
-              <article key={goal.id} className="item-card goal-card">
-                <div className="item-card-top">
-                  <input
-                    className="item-title"
-                    value={goal.title}
-                    aria-label="Goal name"
-                    placeholder="e.g. Buy a car, Marriage, House…"
-                    onChange={(e) =>
-                      updateGoal(goal.id, { title: e.target.value })
-                    }
-                  />
-                  <span className={`goal-status-badge status-${goal.status}`}>
-                    {GOAL_STATUS_LABELS[goal.status]}
-                  </span>
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    aria-label={`Delete ${goal.title || 'goal'}`}
-                    onClick={() => {
-                      if (
-                        confirm(
-                          `Delete “${goal.title || 'this goal'}”?`,
-                        )
-                      ) {
-                        deleteGoal(goal.id);
-                      }
-                    }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+              <article
+                key={goal.id}
+                className="rounded-2xl border border-zinc-950/10 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="m-0 text-base font-semibold text-zinc-950">
+                      {goal.title}
+                    </h3>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <span
+                        className={`rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${categoryBadge(goal.category)}`}
+                      >
+                        {GOAL_CATEGORY_LABELS[goal.category]}
+                      </span>
+                      <span className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-semibold text-zinc-700">
+                        {GOAL_STATUS_LABELS[goal.status]}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-extrabold text-zinc-950">
+                      {pct}%
+                    </div>
+                  </div>
                 </div>
 
-                <div className="item-fields freelance-project-fields goal-fields">
-                  <label>
-                    Category
-                    <select
-                      value={goal.category}
-                      aria-label="Goal category"
-                      onChange={(e) =>
-                        updateGoal(goal.id, {
-                          category: e.target.value as GoalCategory,
-                        })
-                      }
-                    >
-                      {CATEGORIES.map((c) => (
-                        <option key={c} value={c}>
-                          {GOAL_CATEGORY_LABELS[c]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Status
-                    <select
-                      value={goal.status}
-                      aria-label="Goal status"
-                      onChange={(e) => {
-                        const status = e.target.value as GoalStatus;
-                        updateGoal(goal.id, {
-                          status,
-                          achievedDate:
-                            status === 'achieved'
-                              ? goal.achievedDate ||
-                                new Date().toISOString().slice(0, 10)
-                              : goal.achievedDate,
-                          progress:
-                            status === 'achieved' ? 100 : goal.progress,
-                        });
-                      }}
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {GOAL_STATUS_LABELS[s]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Priority
-                    <select
-                      value={goal.priority}
-                      aria-label="Priority"
-                      onChange={(e) =>
-                        updateGoal(goal.id, {
-                          priority: e.target.value as Priority,
-                        })
-                      }
-                    >
-                      {PRIORITIES.map((p) => (
-                        <option key={p} value={p}>
-                          {PRIORITY_LABELS[p]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Target amount
-                    <input
-                      type="number"
-                      min={0}
-                      value={goal.targetAmount}
-                      aria-label="Target amount"
-                      onChange={(e) =>
-                        updateGoal(goal.id, {
-                          targetAmount: Number(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </label>
-                  <label>
-                    Saved / invested
-                    <input
-                      type="number"
-                      min={0}
-                      value={goal.savedAmount}
-                      aria-label="Saved amount"
-                      onChange={(e) =>
-                        updateGoal(goal.id, {
-                          savedAmount: Number(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </label>
-                  <label>
-                    Start date
-                    <input
-                      type="date"
-                      value={goal.startDate ?? ''}
-                      onChange={(e) =>
-                        updateGoal(goal.id, {
-                          startDate: e.target.value || undefined,
-                        })
-                      }
-                    />
-                  </label>
-                  <label>
-                    Complete by
-                    <input
-                      type="date"
-                      value={goal.targetDate ?? ''}
-                      onChange={(e) =>
-                        updateGoal(goal.id, {
-                          targetDate: e.target.value || undefined,
-                        })
-                      }
-                    />
-                  </label>
-                  <label>
-                    Achieved on
-                    <input
-                      type="date"
-                      value={goal.achievedDate ?? ''}
-                      onChange={(e) =>
-                        updateGoal(goal.id, {
-                          achievedDate: e.target.value || undefined,
-                        })
-                      }
-                    />
-                  </label>
-                  <label>
-                    Progress
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={shownProgress}
-                      aria-label="Progress"
-                      onChange={(e) => {
-                        const progress = Number(e.target.value);
-                        if (goal.targetAmount > 0) {
-                          updateGoal(goal.id, {
-                            progress,
-                            savedAmount: Math.round(
-                              (progress / 100) * goal.targetAmount,
-                            ),
-                          });
-                        } else {
-                          updateGoal(goal.id, { progress });
-                        }
-                      }}
-                    />
-                    <span className="progress-val">{shownProgress}%</span>
-                  </label>
-                </div>
-
-                {goal.targetAmount > 0 && (
-                  <div className="goal-money-bar" aria-hidden>
-                    <div
-                      className="goal-money-fill"
-                      style={{ width: `${funded}%` }}
-                    />
+                <div className="mt-3">
+                  <div className="mb-1 flex justify-between text-xs text-zinc-500">
                     <span>
-                      {money(goal.savedAmount, goal.currency)} of{' '}
-                      {money(goal.targetAmount, goal.currency)}
+                      {formatCurrency(goal.savedAmount, goal.currency)} saved
+                    </span>
+                    <span>
+                      of {formatCurrency(goal.targetAmount, goal.currency)}
                     </span>
                   </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-zinc-100">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        pct >= 100 ? 'bg-emerald-500' : 'bg-teal-600'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+
+                {goal.targetDate && (
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Target {goal.targetDate}
+                  </p>
                 )}
 
-                <label className="item-notes">
-                  Why this goal
-                  <textarea
-                    rows={2}
-                    value={goal.why}
-                    onChange={(e) =>
-                      updateGoal(goal.id, { why: e.target.value })
-                    }
-                    placeholder="What does this mean for you? Why does it matter?"
-                  />
-                </label>
-                <label className="item-notes">
-                  Notes / next steps
-                  <textarea
-                    rows={2}
-                    value={goal.notes}
-                    onChange={(e) =>
-                      updateGoal(goal.id, { notes: e.target.value })
-                    }
-                    placeholder="Milestones, research, EMIs, documents…"
-                  />
-                </label>
+                {depositId === goal.id ? (
+                  <form
+                    className="mt-3 flex gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      applyDeposit(goal.id)
+                    }}
+                  >
+                    <input
+                      type="number"
+                      min={1}
+                      className="min-w-0 flex-1 rounded-xl border border-zinc-950/10 px-3 py-2 text-sm"
+                      placeholder="Deposit amount"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      autoFocus
+                    />
+                    <Button type="submit" size="sm">
+                      Add
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setDepositId(null)
+                        setDepositAmount('')
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setDepositId(goal.id)
+                        setDepositAmount('')
+                      }}
+                    >
+                      <Plus size={13} /> Add savings
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditing(goal)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => {
+                        if (confirm(`Delete “${goal.title}”?`))
+                          deleteGoal(goal.id)
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </Button>
+                  </div>
+                )}
               </article>
-            );
+            )
           })}
-          {visible.length === 0 && (
-            <p className="empty">
-              {goals.length === 0
-                ? 'No goals yet. Add something you want to work toward — a car, marriage, house, trip, or anything else.'
-                : 'No goals in this filter.'}
-            </p>
-          )}
         </div>
-      </section>
+      )}
+
+      {editing !== null && (
+        <GoalModal
+          goal={editing === 'new' ? undefined : editing}
+          onClose={() => setEditing(null)}
+          onSave={(data) => {
+            if (editing === 'new') addGoal(data)
+            else updateGoal(editing.id, data)
+            setEditing(null)
+          }}
+        />
+      )}
     </div>
-  );
+  )
+}
+
+function GoalModal({
+  goal,
+  onClose,
+  onSave,
+}: {
+  goal?: Goal
+  onClose: () => void
+  onSave: (data: Partial<Goal>) => void
+}) {
+  const [title, setTitle] = useState(goal?.title ?? '')
+  const [category, setCategory] = useState<GoalCategory>(
+    goal?.category ?? 'home',
+  )
+  const [status, setStatus] = useState<GoalStatus>(goal?.status ?? 'planning')
+  const [priority, setPriority] = useState<Priority>(goal?.priority ?? 'medium')
+  const [targetAmount, setTargetAmount] = useState(
+    String(goal?.targetAmount ?? 0),
+  )
+  const [savedAmount, setSavedAmount] = useState(String(goal?.savedAmount ?? 0))
+  const [targetDate, setTargetDate] = useState(goal?.targetDate ?? '')
+  const [why, setWhy] = useState(goal?.why ?? '')
+  const [notes, setNotes] = useState(goal?.notes ?? '')
+
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    if (!title.trim()) return
+    const target = Number(targetAmount) || 0
+    const saved = Number(savedAmount) || 0
+    const progress = moneyProgress(saved, target)
+    onSave({
+      title: title.trim(),
+      category,
+      status:
+        target > 0 && saved >= target ? 'achieved' : status,
+      priority,
+      targetAmount: target,
+      savedAmount: saved,
+      targetDate: targetDate || undefined,
+      progress: target > 0 && saved >= target ? 100 : progress,
+      why: why.trim(),
+      notes: notes.trim(),
+      achievedDate:
+        target > 0 && saved >= target
+          ? goal?.achievedDate ?? new Date().toISOString().slice(0, 10)
+          : goal?.achievedDate,
+    })
+  }
+
+  return (
+    <Dialog open onClose={onClose} size="lg">
+      <DialogTitle>{goal ? 'Edit goal' : 'New goal'}</DialogTitle>
+      <DialogBody>
+        <form id="goal-form" className="space-y-3" onSubmit={submit}>
+          <label className="block text-sm font-medium text-zinc-700">
+            Title
+            <input
+              className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm font-medium text-zinc-700">
+              Category
+              <select
+                className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as GoalCategory)}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {GOAL_CATEGORY_LABELS[c]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm font-medium text-zinc-700">
+              Status
+              <select
+                className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as GoalStatus)}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {GOAL_STATUS_LABELS[s]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm font-medium text-zinc-700">
+              Priority
+              <select
+                className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as Priority)}
+              >
+                {PRIORITIES.map((p) => (
+                  <option key={p} value={p}>
+                    {PRIORITY_LABELS[p]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm font-medium text-zinc-700">
+              Target date
+              <input
+                type="date"
+                className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+                value={targetDate}
+                onChange={(e) => setTargetDate(e.target.value)}
+              />
+            </label>
+            <label className="block text-sm font-medium text-zinc-700">
+              Target amount
+              <input
+                type="number"
+                min={0}
+                className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+                value={targetAmount}
+                onChange={(e) => setTargetAmount(e.target.value)}
+              />
+            </label>
+            <label className="block text-sm font-medium text-zinc-700">
+              Saved amount
+              <input
+                type="number"
+                min={0}
+                className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+                value={savedAmount}
+                onChange={(e) => setSavedAmount(e.target.value)}
+              />
+            </label>
+          </div>
+          <label className="block text-sm font-medium text-zinc-700">
+            Why it matters
+            <textarea
+              className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+              rows={2}
+              value={why}
+              onChange={(e) => setWhy(e.target.value)}
+            />
+          </label>
+          <label className="block text-sm font-medium text-zinc-700">
+            Notes / plan
+            <textarea
+              className="mt-1.5 w-full rounded-xl border border-zinc-950/10 px-3 py-2.5 text-sm"
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </label>
+        </form>
+      </DialogBody>
+      <DialogActions>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" form="goal-form">
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
 }

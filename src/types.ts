@@ -30,6 +30,38 @@ export type ViewMode = 'list' | 'board' | 'table';
 export type PaymentStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 export type PaymentMethod = 'upi' | 'bank' | 'paypal' | 'card' | 'cash' | 'other';
 export type PaymentType = 'advance' | 'due' | 'refund' | 'return';
+export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'on_hold';
+
+export interface ProjectDeliverable {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface Project {
+  id: string;
+  clientId: string;
+  title: string;
+  description?: string;
+  budget: number;
+  currency: string;
+  status: ProjectStatus;
+  startDate: string;
+  deadline?: string;
+  deliverables: ProjectDeliverable[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinancialStats {
+  netReceived: number;
+  advancePending: number;
+  duePending: number;
+  refundedReturned: number;
+  refundPending: number;
+  overdueCount: number;
+  overdueAmount: number;
+}
 export type GoalCategory =
   | 'vehicle'
   | 'home'
@@ -164,6 +196,7 @@ export interface AppState {
   pages: Page[];
   habits: Habit[];
   clients: Client[];
+  projects: Project[];
   payments: Payment[];
   goals: Goal[];
   theme: ThemeSettings;
@@ -226,6 +259,13 @@ export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
   due: 'Due',
   refund: 'Refund',
   return: 'Return',
+};
+
+export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  planning: 'Planning',
+  in_progress: 'In progress',
+  completed: 'Completed',
+  on_hold: 'On hold',
 };
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {

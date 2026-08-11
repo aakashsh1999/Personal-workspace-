@@ -10,10 +10,17 @@ import { TRACKER_ORIGIN } from './lib/apps';
 import { StoreProvider, useStore } from './store';
 
 function Shell() {
-  const { state, toggleSidebar, activePage, syncStatus, setActivePageId } =
-    useStore();
+  const {
+    state,
+    toggleSidebar,
+    setSidebarCollapsed,
+    activePage,
+    syncStatus,
+    setActivePageId,
+  } = useStore();
   const isFinance =
     activePage?.space === 'finance' || activePage?.id === 'page-finance';
+  const mobileSidebarOpen = !state.sidebarCollapsed;
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -26,6 +33,12 @@ function Shell() {
     return () => window.removeEventListener('message', onMessage);
   }, [setActivePageId]);
 
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 860px)').matches) {
+      setSidebarCollapsed(true);
+    }
+  }, [setSidebarCollapsed]);
+
   return (
     <div
       className={`app ${state.sidebarCollapsed ? 'sidebar-is-collapsed' : ''} ${isFinance ? 'app--finance' : ''}`}
@@ -33,6 +46,14 @@ function Shell() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Close menu"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
       <Sidebar />
       <div className="main min-w-0">
         <header className="topbar">

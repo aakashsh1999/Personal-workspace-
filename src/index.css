@@ -303,12 +303,8 @@ textarea:focus-visible {
   border-radius: 10px;
   transition: background var(--ease), box-shadow var(--ease), opacity var(--ease);
   margin-bottom: 2px;
-  cursor: grab;
   border: 1px solid transparent;
-}
-
-.nav-item:active {
-  cursor: grabbing;
+  touch-action: manipulation;
 }
 
 .nav-item:hover {
@@ -334,11 +330,20 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
+  width: 28px;
+  height: 36px;
   color: var(--muted);
-  opacity: 0.45;
+  opacity: 0.55;
   flex-shrink: 0;
-  padding-left: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.nav-grip:active {
+  cursor: grabbing;
 }
 
 .nav-item:hover .nav-grip {
@@ -352,10 +357,12 @@ textarea:focus-visible {
   gap: 9px;
   border: none;
   background: transparent;
-  padding: 8px 8px 8px 4px;
+  padding: 10px 8px 10px 4px;
   text-align: left;
   min-width: 0;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-item-text {
@@ -386,13 +393,15 @@ textarea:focus-visible {
   border: none;
   background: transparent;
   color: var(--muted);
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   margin-right: 4px;
+  touch-action: manipulation;
 }
 
-.nav-item:hover .nav-delete {
+.nav-item:hover .nav-delete,
+.nav-item:focus-within .nav-delete {
   opacity: 1;
 }
 
@@ -2305,13 +2314,47 @@ textarea:focus-visible {
 
 .item-row {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 4px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
+  padding: 4px;
   box-shadow: var(--shadow-sm);
-  transition: border-color var(--ease), box-shadow var(--ease);
+}
+
+.item-row-check {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-top: 4px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+
+.item-row-check:hover {
+  background: rgb(13 148 136 / 0.08);
+}
+
+.item-row-check-empty {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid #a1a1aa;
+}
+
+.item-row-title.is-done {
+  text-decoration: line-through;
+  color: #71717a;
+}
+
+.board--simple {
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
 }
 
 .item-row:hover {
@@ -2818,10 +2861,26 @@ textarea:focus-visible {
   }
 }
 
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .app,
   .app.sidebar-is-collapsed {
     grid-template-columns: 1fr;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: rgb(9 9 11 / 0.35);
+    -webkit-tap-highlight-color: transparent;
   }
 
   .sidebar {
@@ -2830,10 +2889,13 @@ textarea:focus-visible {
     width: min(86vw, 300px);
     transform: translateX(0);
     box-shadow: var(--shadow);
+    z-index: 30;
+    will-change: transform;
   }
 
   .app.sidebar-is-collapsed .sidebar {
     transform: translateX(-110%);
+    pointer-events: none;
   }
 
   .mobile-menu {
@@ -2855,5 +2917,40 @@ textarea:focus-visible {
 
   .add-block {
     margin-left: 0;
+  }
+
+  /* Mobile perf: drop expensive paint/effects */
+  .topbar,
+  .finance-embed-bar {
+    backdrop-filter: none;
+    background: #ffffff;
+  }
+
+  .workspace,
+  .item-card,
+  .menu-popover,
+  .auth-screen-card {
+    animation: none;
+  }
+
+  .app {
+    transition: none;
+  }
+
+  .habit-cell:hover,
+  .habit-swatch:hover {
+    transform: none;
+  }
+
+  .nav-delete {
+    opacity: 0.7;
+  }
+
+  .sidebar-hint {
+    display: none;
+  }
+
+  .nav-grip {
+    display: none;
   }
 }

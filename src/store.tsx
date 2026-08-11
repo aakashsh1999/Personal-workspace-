@@ -25,6 +25,9 @@ import type {
   Habit,
   Page,
   Payment,
+  Project,
+  ProjectDeliverable,
+  ProjectStatus,
   SavedNote,
   SpaceKind,
   ThemeSettings,
@@ -44,6 +47,7 @@ type Store = {
   syncStatus: SyncStatus;
   setActivePageId: (id: string) => void;
   toggleSidebar: () => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   setSearchQuery: (q: string) => void;
   updatePage: (id: string, patch: Partial<Page>) => void;
   addPage: (space: SpaceKind, isTracker?: boolean) => void;
@@ -75,9 +79,13 @@ type Store = {
   addHabit: (name: string, color?: string) => void;
   updateHabit: (habitId: string, patch: Partial<Pick<Habit, 'name' | 'color'>>) => void;
   deleteHabit: (habitId: string) => void;
-  addClient: (partial?: Partial<Client>) => void;
+  addClient: (partial?: Partial<Client>) => string;
   updateClient: (id: string, patch: Partial<Client>) => void;
   deleteClient: (id: string) => void;
+  addProject: (partial?: Partial<Project>) => string;
+  updateProject: (id: string, patch: Partial<Project>) => void;
+  deleteProject: (id: string) => void;
+  toggleProjectDeliverable: (projectId: string, deliverableId: string) => void;
   addPayment: (partial?: Partial<Payment>) => void;
   updatePayment: (id: string, patch: Partial<Payment>) => void;
   deletePayment: (id: string) => void;
@@ -126,6 +134,41 @@ function ensureCorePages(pages: Page[]): Page[] {
   return next;
 }
 
+function migrateProjectsFromFreelanceItems(
+  pages: Page[],
+  existing: Project[] | undefined,
+): Project[] {
+  if (existing && existing.length > 0) return existing;
+  const freelance = pages.find(
+    (p) => p.id === 'page-freelance' || p.space === 'freelance',
+  );
+  if (!freelance?.items?.length) return existing ?? [];
+  const t = new Date().toISOString();
+  return freelance.items.map((item) => {
+    const statusMap: Record<string, ProjectStatus> = {
+      backlog: 'planning',
+      todo: 'planning',
+      in_progress: 'in_progress',
+      done: 'completed',
+      blocked: 'on_hold',
+    };
+    return {
+      id: item.id,
+      clientId: item.clientId ?? '',
+      title: item.title || 'Untitled project',
+      description: item.notes || undefined,
+      budget: item.budget ?? 0,
+      currency: 'INR',
+      status: statusMap[item.status] ?? 'planning',
+      startDate: item.createdAt?.slice(0, 10) ?? t.slice(0, 10),
+      deadline: item.dueDate,
+      deliverables: [],
+      createdAt: item.createdAt ?? t,
+      updatedAt: item.updatedAt ?? t,
+    };
+  });
+}
+
 function loadState(): AppState {
   try {
     const raw =
@@ -136,12 +179,14 @@ function loadState(): AppState {
     if (!parsed.pages?.length) return createEmptyState();
     const seed = createEmptyState();
     const pages = ensureCorePages(parsed.pages);
+    const projects = migrateProjectsFromFreelanceItems(pages, parsed.projects);
     return {
       ...seed,
       ...parsed,
       pages,
       habits: parsed.habits ?? [],
       clients: parsed.clients ?? [],
+      projects,
       payments: (parsed.payments ?? []).map((p) => ({
         ...p,
         type: p.type ?? ('due' as const),
@@ -164,11 +209,16 @@ function fromCloud(cloud: CloudWorkspace, fallback: AppState): AppState {
   const pages = ensureCorePages(
     cloud.pages?.length ? cloud.pages : fallback.pages,
   );
+  const projects = migrateProjectsFromFreelanceItems(
+    pages,
+    cloud.projects ?? fallback.projects,
+  );
   return {
     ...fallback,
     pages,
     habits: cloud.habits ?? [],
     clients: cloud.clients ?? [],
+    projects,
     payments: (cloud.payments ?? []).map((p) => ({
       ...p,
       type: p.type ?? ('due' as const),
@@ -192,7 +242,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   stateRef.current = state;
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateRef.current));
+      } catch (err) {
+        console.error('localStorage save failed', err);
+      }
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, [state]);
 
   useEffect(() => {
@@ -246,6 +303,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.uid]);
 
+  // Cloud sync only when workspace data changes — not on page/nav/search toggles.
   useEffect(() => {
     if (!user || !hydrated) return;
     if (skipCloudSave.current) {
@@ -255,7 +313,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     setSyncStatus('syncing');
     const timer = window.setTimeout(() => {
-      saveWorkspace(user.uid, state)
+      saveWorkspace(user.uid, stateRef.current)
         .then(() => {
           setSyncStatus('synced');
           setSyncError(null);
@@ -265,17 +323,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setSyncStatus('error');
           setSyncError(syncErrorMessage(err));
         });
-    }, 900);
+    }, 1200);
 
     return () => window.clearTimeout(timer);
-  }, [state, user, hydrated]);
+  }, [
+    state.pages,
+    state.habits,
+    state.clients,
+    state.projects,
+    state.payments,
+    state.goals,
+    state.theme,
+    user,
+    hydrated,
+  ]);
 
   const setActivePageId = useCallback((id: string) => {
-    setState((s) => ({ ...s, activePageId: id }));
+    setState((s) => (s.activePageId === id ? s : { ...s, activePageId: id }));
   }, []);
 
   const toggleSidebar = useCallback(() => {
     setState((s) => ({ ...s, sidebarCollapsed: !s.sidebarCollapsed }));
+  }, []);
+
+  const setSidebarCollapsed = useCallback((collapsed: boolean) => {
+    setState((s) =>
+      s.sidebarCollapsed === collapsed ? s : { ...s, sidebarCollapsed: collapsed },
+    );
   }, []);
 
   const setSearchQuery = useCallback((q: string) => {
@@ -456,6 +530,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         priority: 'medium',
         tags: [],
         progress: 0,
+        dueDate:
+          page?.space === 'tasks' ? t.slice(0, 10) : undefined,
         createdAt: t,
         updatedAt: t,
       };
@@ -657,8 +733,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addClient = useCallback((partial: Partial<Client> = {}) => {
+    const id = createId();
     const client: Client = {
-      id: createId(),
+      id,
       name: partial.name ?? 'New client',
       company: partial.company,
       email: partial.email,
@@ -667,6 +744,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     setState((s) => ({ ...s, clients: [client, ...s.clients] }));
+    return id;
   }, []);
 
   const updateClient = useCallback((id: string, patch: Partial<Client>) => {
@@ -681,6 +759,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...s,
       clients: s.clients.filter((c) => c.id !== id),
       payments: s.payments.filter((p) => p.clientId !== id),
+      projects: (s.projects ?? []).map((p) =>
+        p.clientId === id ? { ...p, clientId: '' } : p,
+      ),
       pages: s.pages.map((page) => ({
         ...page,
         items: page.items.map((item) =>
@@ -689,6 +770,78 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       })),
     }));
   }, []);
+
+  const addProject = useCallback((partial: Partial<Project> = {}) => {
+    const id = createId();
+    const t = new Date().toISOString();
+    const defaults: ProjectDeliverable[] = [
+      { id: createId(), title: 'Discovery & scope', completed: false },
+      { id: createId(), title: 'Build / delivery', completed: false },
+      { id: createId(), title: 'Handoff', completed: false },
+    ];
+    const project: Project = {
+      id,
+      clientId: partial.clientId ?? '',
+      title: partial.title ?? 'New project',
+      description: partial.description,
+      budget: partial.budget ?? 0,
+      currency: partial.currency ?? 'INR',
+      status: partial.status ?? 'planning',
+      startDate: partial.startDate ?? t.slice(0, 10),
+      deadline: partial.deadline,
+      deliverables: partial.deliverables ?? defaults,
+      createdAt: t,
+      updatedAt: t,
+    };
+    setState((s) => ({
+      ...s,
+      projects: [project, ...(s.projects ?? [])],
+    }));
+    return id;
+  }, []);
+
+  const updateProject = useCallback((id: string, patch: Partial<Project>) => {
+    const t = new Date().toISOString();
+    setState((s) => ({
+      ...s,
+      projects: (s.projects ?? []).map((p) =>
+        p.id === id ? { ...p, ...patch, updatedAt: t } : p,
+      ),
+    }));
+  }, []);
+
+  const deleteProject = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      projects: (s.projects ?? []).filter((p) => p.id !== id),
+      payments: s.payments.map((p) =>
+        p.projectId === id ? { ...p, projectId: undefined } : p,
+      ),
+    }));
+  }, []);
+
+  const toggleProjectDeliverable = useCallback(
+    (projectId: string, deliverableId: string) => {
+      const t = new Date().toISOString();
+      setState((s) => ({
+        ...s,
+        projects: (s.projects ?? []).map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                updatedAt: t,
+                deliverables: (p.deliverables ?? []).map((d) =>
+                  d.id === deliverableId
+                    ? { ...d, completed: !d.completed }
+                    : d,
+                ),
+              }
+            : p,
+        ),
+      }));
+    },
+    [],
+  );
 
   const addPayment = useCallback((partial: Partial<Payment> = {}) => {
     const t = new Date().toISOString();
@@ -802,6 +955,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       syncError,
       setActivePageId,
       toggleSidebar,
+      setSidebarCollapsed,
       setSearchQuery,
       updatePage,
       addPage,
@@ -827,6 +981,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addClient,
       updateClient,
       deleteClient,
+      addProject,
+      updateProject,
+      deleteProject,
+      toggleProjectDeliverable,
       addPayment,
       updatePayment,
       deletePayment,
@@ -844,6 +1002,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       syncError,
       setActivePageId,
       toggleSidebar,
+      setSidebarCollapsed,
       setSearchQuery,
       updatePage,
       addPage,
@@ -869,6 +1028,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addClient,
       updateClient,
       deleteClient,
+      addProject,
+      updateProject,
+      deleteProject,
+      toggleProjectDeliverable,
       addPayment,
       updatePayment,
       deletePayment,

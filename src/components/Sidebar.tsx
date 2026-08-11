@@ -1,4 +1,4 @@
-import { useMemo, useState, type DragEvent } from 'react';
+import { useMemo, useState, type DragEvent } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -6,74 +6,87 @@ import {
   Plus,
   RotateCcw,
   Search,
-} from 'lucide-react';
-import { useStore } from '../store';
-import { SPACE_META } from '../types';
-import { PageIcon } from './icons';
+} from 'lucide-react'
+import { useStore } from '../store'
+import { SPACE_META } from '../types'
+import { PageIcon } from './icons'
+
+function isMobileNav() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(max-width: 860px)').matches
+  )
+}
 
 export function Sidebar() {
   const {
     state,
     setActivePageId,
     toggleSidebar,
+    setSidebarCollapsed,
     setSearchQuery,
     addPage,
     deletePage,
     reorderPages,
     resetData,
-  } = useStore();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
+  } = useStore()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
 
-  const searching = state.searchQuery.trim().length > 0;
+  const searching = state.searchQuery.trim().length > 0
 
   const filtered = useMemo(() => {
-    const q = state.searchQuery.trim().toLowerCase();
-    if (!q) return state.pages;
+    const q = state.searchQuery.trim().toLowerCase()
+    if (!q) return state.pages
     const goalHit = (state.goals ?? []).some(
       (g) =>
         g.title.toLowerCase().includes(q) ||
         g.why.toLowerCase().includes(q) ||
         g.notes.toLowerCase().includes(q),
-    );
+    )
     return state.pages.filter(
       (p) =>
         p.title.toLowerCase().includes(q) ||
         p.blocks.some((b) => b.content.toLowerCase().includes(q)) ||
         p.items.some((i) => i.title.toLowerCase().includes(q)) ||
         (goalHit && (p.id === 'page-goals' || p.space === 'goals')),
-    );
-  }, [state.pages, state.searchQuery, state.goals]);
+    )
+  }, [state.pages, state.searchQuery, state.goals])
+
+  function selectPage(id: string) {
+    setActivePageId(id)
+    if (isMobileNav()) setSidebarCollapsed(true)
+  }
 
   function onDragStart(e: DragEvent, id: string) {
     if (searching) {
-      e.preventDefault();
-      return;
+      e.preventDefault()
+      return
     }
-    setDragId(id);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id);
+    setDragId(id)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', id)
   }
 
   function onDragOver(e: DragEvent, id: string) {
-    if (!dragId || dragId === id || searching) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setOverId(id);
+    if (!dragId || dragId === id || searching) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setOverId(id)
   }
 
   function onDrop(e: DragEvent, id: string) {
-    e.preventDefault();
-    const from = e.dataTransfer.getData('text/plain') || dragId;
-    if (from) reorderPages(from, id);
-    setDragId(null);
-    setOverId(null);
+    e.preventDefault()
+    const from = e.dataTransfer.getData('text/plain') || dragId
+    if (from) reorderPages(from, id)
+    setDragId(null)
+    setOverId(null)
   }
 
   function onDragEnd() {
-    setDragId(null);
-    setOverId(null);
+    setDragId(null)
+    setOverId(null)
   }
 
   if (state.sidebarCollapsed) {
@@ -93,7 +106,7 @@ export function Sidebar() {
               key={p.id}
               type="button"
               className={`rail-btn ${state.activePageId === p.id ? 'is-active' : ''}`}
-              onClick={() => setActivePageId(p.id)}
+              onClick={() => selectPage(p.id)}
               title={p.title}
               aria-label={p.title}
             >
@@ -102,7 +115,7 @@ export function Sidebar() {
           ))}
         </div>
       </aside>
-    );
+    )
   }
 
   return (
@@ -151,8 +164,9 @@ export function Sidebar() {
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  addPage('notes', false);
-                  setMenuOpen(false);
+                  addPage('notes', false)
+                  setMenuOpen(false)
+                  if (isMobileNav()) setSidebarCollapsed(true)
                 }}
               >
                 Page
@@ -161,8 +175,9 @@ export function Sidebar() {
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  addPage('custom', true);
-                  setMenuOpen(false);
+                  addPage('custom', true)
+                  setMenuOpen(false)
+                  if (isMobileNav()) setSidebarCollapsed(true)
                 }}
               >
                 Tracker board
@@ -171,8 +186,9 @@ export function Sidebar() {
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  addPage('tasks', true);
-                  setMenuOpen(false);
+                  addPage('tasks', true)
+                  setMenuOpen(false)
+                  if (isMobileNav()) setSidebarCollapsed(true)
                 }}
               >
                 Task list
@@ -181,8 +197,9 @@ export function Sidebar() {
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  addPage('learning', true);
-                  setMenuOpen(false);
+                  addPage('learning', true)
+                  setMenuOpen(false)
+                  if (isMobileNav()) setSidebarCollapsed(true)
                 }}
               >
                 Learning tracker
@@ -191,13 +208,13 @@ export function Sidebar() {
           )}
         </div>
         {!searching && (
-          <p className="sidebar-hint">Drag items to reorder</p>
+          <p className="sidebar-hint">Drag the grip to reorder</p>
         )}
       </div>
 
       <nav className="sidebar-nav" aria-label="Pages">
         {filtered.map((page) => {
-          const canDrag = !searching;
+          const canDrag = !searching
           return (
             <div
               key={page.id}
@@ -209,21 +226,27 @@ export function Sidebar() {
               ]
                 .filter(Boolean)
                 .join(' ')}
-              draggable={canDrag}
-              onDragStart={(e) => onDragStart(e, page.id)}
               onDragOver={(e) => onDragOver(e, page.id)}
               onDrop={(e) => onDrop(e, page.id)}
-              onDragEnd={onDragEnd}
             >
               {canDrag && (
-                <span className="nav-grip" aria-hidden title="Drag to reorder">
-                  <GripVertical size={14} />
-                </span>
+                <button
+                  type="button"
+                  className="nav-grip"
+                  draggable
+                  title="Drag to reorder"
+                  aria-label={`Reorder ${page.title}`}
+                  onDragStart={(e) => onDragStart(e, page.id)}
+                  onDragEnd={onDragEnd}
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <GripVertical size={14} aria-hidden />
+                </button>
               )}
               <button
                 type="button"
                 className="nav-item-btn"
-                onClick={() => setActivePageId(page.id)}
+                onClick={() => selectPage(page.id)}
               >
                 <PageIcon name={page.icon} size={15} />
                 <span className="nav-item-text">
@@ -239,14 +262,14 @@ export function Sidebar() {
                   className="nav-delete"
                   aria-label={`Delete ${page.title}`}
                   onClick={() => {
-                    if (confirm(`Delete “${page.title}”?`)) deletePage(page.id);
+                    if (confirm(`Delete “${page.title}”?`)) deletePage(page.id)
                   }}
                 >
                   ×
                 </button>
               )}
             </div>
-          );
+          )
         })}
         {filtered.length === 0 && (
           <p className="empty sidebar-empty">No matching pages.</p>
@@ -258,12 +281,12 @@ export function Sidebar() {
         className="btn btn-ghost btn-sm sidebar-reset"
         onClick={() => {
           if (confirm('Clear all your data and start with an empty workspace?'))
-            resetData();
+            resetData()
         }}
       >
         <RotateCcw size={14} />
         Clear workspace
       </button>
     </aside>
-  );
+  )
 }

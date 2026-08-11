@@ -86,6 +86,7 @@ export function createEmptyState(): AppState {
     pages,
     habits: [],
     clients: [],
+    projects: [],
     payments: [],
     goals: [],
     theme: DEFAULT_THEME,

@@ -96,8 +96,26 @@ function ItemRow({
   }
 
   if (!editing) {
+    const done = item.status === 'done';
     return (
       <article className="item-row">
+        <button
+          type="button"
+          className="item-row-check"
+          aria-label={done ? 'Mark not done' : 'Mark done'}
+          onClick={() =>
+            updateItem(pageId, item.id, {
+              status: done ? 'todo' : 'done',
+              progress: done ? Math.min(item.progress, 90) : 100,
+            })
+          }
+        >
+          {done ? (
+            <Check size={16} className="text-teal-600" />
+          ) : (
+            <span className="item-row-check-empty" />
+          )}
+        </button>
         <button
           type="button"
           className="item-row-main"
@@ -105,7 +123,11 @@ function ItemRow({
           aria-label={`Edit ${item.title || 'item'}`}
         >
           <div className="item-row-top">
-            <h3 className="item-row-title">{item.title || 'Untitled'}</h3>
+            <h3
+              className={`item-row-title${done ? ' is-done' : ''}`}
+            >
+              {item.title || 'Untitled'}
+            </h3>
             <div className="item-row-badges">
               <Badge variant={statusVariant(item.status)}>
                 {STATUS_LABELS[item.status]}
@@ -276,15 +298,38 @@ function ItemRow({
 
 function BoardView({ page }: { page: Page }) {
   const { updateItem, addItem, deleteItem } = useStore();
+  const simpleBoard = page.space === 'tasks';
+  const columns: { key: string; label: string; match: (s: Status) => boolean; setStatus: Status }[] =
+    simpleBoard
+      ? [
+          {
+            key: 'todo',
+            label: 'To do',
+            match: (s) => s !== 'done',
+            setStatus: 'todo',
+          },
+          {
+            key: 'done',
+            label: 'Completed',
+            match: (s) => s === 'done',
+            setStatus: 'done',
+          },
+        ]
+      : STATUSES.map((status) => ({
+          key: status,
+          label: STATUS_LABELS[status],
+          match: (s: Status) => s === status,
+          setStatus: status,
+        }));
 
   return (
-    <div className="board">
-      {STATUSES.map((status) => {
-        const col = page.items.filter((i) => i.status === status);
+    <div className={`board${simpleBoard ? ' board--simple' : ''}`}>
+      {columns.map((colDef) => {
+        const col = page.items.filter((i) => colDef.match(i.status));
         return (
-          <section key={status} className="board-col">
+          <section key={colDef.key} className="board-col">
             <header>
-              <h3>{STATUS_LABELS[status]}</h3>
+              <h3>{colDef.label}</h3>
               <span>{col.length}</span>
             </header>
             <div className="board-cards">
@@ -328,19 +373,34 @@ function BoardView({ page }: { page: Page }) {
                   <label className="board-move">
                     <span>Move</span>
                     <select
-                      value={item.status}
-                      aria-label={`Move ${item.title}`}
-                      onChange={(e) =>
-                        updateItem(page.id, item.id, {
-                          status: e.target.value as Status,
-                        })
+                      value={
+                        simpleBoard
+                          ? item.status === 'done'
+                            ? 'done'
+                            : 'todo'
+                          : item.status
                       }
+                      aria-label={`Move ${item.title}`}
+                      onChange={(e) => {
+                        const next = e.target.value as Status;
+                        updateItem(page.id, item.id, {
+                          status: next,
+                          progress: next === 'done' ? 100 : item.progress,
+                        });
+                      }}
                     >
-                      {STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {STATUS_LABELS[s]}
-                        </option>
-                      ))}
+                      {simpleBoard ? (
+                        <>
+                          <option value="todo">To do</option>
+                          <option value="done">Completed</option>
+                        </>
+                      ) : (
+                        STATUSES.map((s) => (
+                          <option key={s} value={s}>
+                            {STATUS_LABELS[s]}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </label>
                 </div>
@@ -349,7 +409,12 @@ function BoardView({ page }: { page: Page }) {
             <button
               type="button"
               className="btn btn-ghost btn-sm"
-              onClick={() => addItem(page.id, 'New item')}
+              onClick={() =>
+                addItem(
+                  page.id,
+                  page.space === 'tasks' ? 'New task' : 'New item',
+                )
+              }
             >
               <Plus size={14} /> Add
             </button>
